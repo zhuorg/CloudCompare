@@ -239,7 +239,7 @@ public: //bounding-box
 
 	//! Returns the entity's own global bounding-box
 	/** Children bboxes are ignored.
-		May differ from the (local) bounding-box if the entity is shifted
+		May differ from the shifted bounding-box if the entity use the global shift mechanism
 		\param[out] minCorner min global bounding-box corner
 		\param[out] maxCorner max global bounding-box corner
 		\return whether the bounding box is valid or not

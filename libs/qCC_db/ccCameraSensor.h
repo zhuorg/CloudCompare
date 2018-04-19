@@ -239,51 +239,51 @@ public: //frustum display
 
 public: //coordinate systems conversion methods
 
-	//! Computes the coordinates of a 3D point in the global coordinate system knowing its coordinates in the sensor coordinate system.
-	/** \param localCoord local coordinates of the 3D point (input)
-		\param globalCoord corresponding global coordinates of the 3D point (output)
+	//! Computes the coordinates of a 3D point in the world coordinate system knowing its coordinates in the sensor coordinate system.
+	/** \param sensorCoord sensor coordinates of the 3D point (input)
+		\param worldCoord corresponding world coordinates of the 3D point (output)
 	**/
-	bool fromLocalCoordToGlobalCoord(const CCVector3& localCoord, CCVector3& globalCoord) const;
+	bool fromSensorToWorld(const CCVector3& sensorCoord, CCVector3& worldCoord) const;
 
-	//! Computes the coordinates of a 3D point in the sensor coordinate system knowing its coordinates in the global coordinate system.
-	/** \param globalCoord global coordinates of the 3D point (input)
-		\param localCoord corresponding local coordinates of the 3D point (output)
+	//! Computes the coordinates of a 3D point in the sensor coordinate system knowing its coordinates in the world coordinate system.
+	/** \param worldCoord world coordinates of the 3D point (input)
+		\param sensorCoord corresponding sensor coordinates of the 3D point (output)
 	**/
-	bool fromGlobalCoordToLocalCoord(const CCVector3& globalCoord, CCVector3& localCoord) const;
+	bool fromWorldToSensor(const CCVector3& worldCoord, CCVector3& sensorCoord) const;
 
-	//! Computes the coordinates of a 3D point in the global coordinate system knowing its coordinates in the sensor coordinate system.
-	/** \param localCoord local coordinates of the 3D point (input)
+	//! Computes the coordinates of a 3D point in the image frame (px) knowing its coordinates in the sensor coordinate system.
+	/** \param sensorCoord sensor coordinates of the 3D point (input)
 		\param imageCoord image coordinates of the projected point on the image (output) --> !! Note that the first index is (0,0) and the last (width-1,height-1) !!
-		\param withLensError to take lens distortion into account
+		\param correctDistortion to take lens distortion into account
 		\return if operation has succeeded (typically, errors occur when the projection of the initial 3D points is not into the image boundaries, or when the 3D point is behind the camera)
 	**/
-	bool fromLocalCoordToImageCoord(const CCVector3& localCoord, CCVector2& imageCoord, bool withLensError = true) const;
+	bool fromSensorToImage(const CCVector3& sensorCoord, CCVector2& imageCoord, bool correctDistortion = true) const;
 
-	//! Computes the coordinates of a 3D point in the sensor coordinate system knowing its coordinates in the global coordinate system.
+	//! Computes the coordinates of a 3D point in the sensor coordinate system knowing its coordinates in the image frame.
 	/** \param imageCoord image coordinates of the pixel (input) --> !! Note that the first index is (0,0) and the last (width-1,height-1) !!
-		\param localCoord local coordinates of the corresponding 3D point (output)
+		\param sensorCoord sensor coordinates of the corresponding 3D point (output)
 		\param depth depth of the output pixel relatively to the camera center
-		\param withLensCorrection if we want to correct the initial pixel coordinates with the lens correction formula
+		\param correctDistortion if we want to correct the initial pixel coordinates with the lens correction formula
 		\return if operation has succeeded (typically, errors occur when the initial pixel coordinates are not into the image boundaries)
 	**/
-	bool fromImageCoordToLocalCoord(const CCVector2& imageCoord, CCVector3& localCoord, PointCoordinateType depth, bool withLensCorrection = true) const;
+	bool fromImageToSensor(const CCVector2& imageCoord, CCVector3& sensorCoord, PointCoordinateType depth, bool correctDistortion = true) const;
 
-	//! Computes the coordinates of a 3D point in the image knowing its coordinates in the global coordinate system.
-	/** \param globalCoord global coordinates of the 3D point
+	//! Computes the 2D coordinates of a 3D point in the image frame knowing its coordinates in the world coordinate system.
+	/** \param worldCoord world coordinates of the 3D point
 		\param imageCoord to get back the image coordinates of the projected 3D point --> !! Note that the first index is (0,0) and the last (width-1,height-1) !!
-		\param withLensError to take lens distortion into account
+		\param correctDistortion to take lens distortion into account
 		\return if operation has succeeded (typically, errors occur when the projection of the initial 3D points is not into the image boundaries, or when the 3D point is behind the camera)
 	**/
-	bool fromGlobalCoordToImageCoord(const CCVector3& globalCoord, CCVector2& imageCoord, bool withLensError = true) const;
+	bool fromWorldToImage(const CCVector3& worldCoord, CCVector2& imageCoord, bool correctDistortion = true) const;
 
-	//! Computes the global coordinates of a 3D points from its 3D coordinates (pixel position in the image)
+	//! Computes the world coordinates of a 3D points from its 2D coordinates (pixel position in the image)
 	/** \param imageCoord image coordinates of the pixel (input) --> !! Note that the first index is (0,0) and the last (width-1,height-1) !!
-		\param globalCoord global coordinates of the corresponding 3D point (output)
+		\param worldCoord global coordinates of the corresponding 3D point (output)
 		\param z0 altitude of the output pixel
-		\param withLensCorrection if we want to correct the initial pixel coordinates with the lens correction formula
+		\param correctDistortion if we want to correct the initial pixel coordinates with the lens correction formula
 		\return if operation has succeeded (typically, errors occur when the initial pixel coordinates are not into the image boundaries)
 	**/
-	bool fromImageCoordToGlobalCoord(const CCVector2& imageCoord, CCVector3& globalCoord, PointCoordinateType z0, bool withLensCorrection = true) const;
+	bool fromImageToWorld(const CCVector2& imageCoord, CCVector3& worldCoord, PointCoordinateType z0, bool correctDistortion = true) const;
 
 	//! Apply the Brown's lens correction to the real projection (through a lens) of a 3D point in the image
 	/**	\warning Only works with Brown's distortion model for now (see BrownDistortionParameters).
@@ -451,20 +451,20 @@ public: //misc
 	ccImage* undistort(ccImage* image, bool inplace = true) const;
 
 	//! Tests if a 3D point is in the field of view of the camera.
-	/** \param globalCoord global coordinates of the 3D point
-		//TODO withLensCorrection if we want to take the lens distortion into consideration
+	/** \param worldCoord world coordinates of the 3D point
+		//TODO correctDistortion if we want to take the lens distortion into consideration
 		\return if operation has succeeded
 	**/
-	bool isGlobalCoordInFrustum(const CCVector3& globalCoord/*, bool withLensCorrection*/) const;
+	bool isWorldCoordInFrustum(const CCVector3& worldCoord/*, bool correctDistortion*/) const;
 
-	//! Compute the coefficients of the 6 planes frustum in the global coordinates system (normal vector are headed the frustum inside), the edges direction vectors and the frustum center
+	//! Compute the coefficients of the 6 planes frustum in the world frame (normal vector are headed the frustum inside), the edges direction vectors and the frustum center
 	/** \param planeCoefficients coefficients of the six planes
 		\param edges direction vectors of the frustum edges (there are 12 edges but some of them are colinear)
-		\param ptsFrustum the 8 frustum corners in the global coordinates system
+		\param ptsFrustum the 8 frustum corners in the world frame
 		\param center center of the the frustum circumscribed sphere
 		\return success
 	**/
-	bool computeGlobalPlaneCoefficients(float planeCoefficients[6][4], CCVector3 ptsFrustum[8], CCVector3 edges[6], CCVector3& center);
+	bool computeWorldPlaneCoefficients(float planeCoefficients[6][4], CCVector3 ptsFrustum[8], CCVector3 edges[6], CCVector3& center);
 
 public: //helpers
 

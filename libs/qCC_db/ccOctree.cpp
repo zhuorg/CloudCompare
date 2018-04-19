@@ -484,7 +484,7 @@ bool ccOctree::intersectWithFrustum(ccCameraSensor* sensor, std::vector<unsigned
 	CCVector3 globalCorners[8];
 	CCVector3 globalEdges[6];
 	CCVector3 globalCenter; 
-	sensor->computeGlobalPlaneCoefficients(globalPlaneCoefficients, globalCorners, globalEdges, globalCenter);
+	sensor->computeWorldPlaneCoefficients(globalPlaneCoefficients, globalCorners, globalEdges, globalCenter);
 
 	if (!m_frustumIntersector)
 	{
@@ -503,7 +503,7 @@ bool ccOctree::intersectWithFrustum(ccCameraSensor* sensor, std::vector<unsigned
 	// project points
 	for (size_t i = 0; i < pointsToTest.size(); i++)
 	{
-		if (sensor->isGlobalCoordInFrustum(pointsToTest[i].second/*, false*/))
+		if (sensor->isWorldCoordInFrustum(pointsToTest[i].second/*, false*/))
 			inCameraFrustum.push_back(pointsToTest[i].first);
 	}
 
@@ -600,8 +600,8 @@ bool ccOctree::pointPicking(const CCVector2d& clickPos,
 	m_theAssociatedCloud->enableScalarField();
 #endif
 
-	//ray with origin expressed in the local coordinate system!
-	Ray<PointCoordinateType> rayLocal(rayAxis, rayOrigin - m_dimMin);
+	//ray with origin expressed in the camera coordinate system!
+	Ray<PointCoordinateType> rayCamera(rayAxis, rayOrigin - m_dimMin);
 
 	//visibility table (if any)
 	const ccGenericPointCloud::VisibilityTableType* visTable = m_theAssociatedCloudAsGPC->isVisibilityTableInstantiated() ? m_theAssociatedCloudAsGPC->getTheVisibilityArray() : 0;
@@ -661,7 +661,7 @@ bool ccOctree::pointPicking(const CCVector2d& clickPos,
 				if (camera.perspective)
 				{
 					double radialSqDist, sqDistToOrigin;
-					rayLocal.squareDistances(cellCenter, radialSqDist, sqDistToOrigin);
+					rayCamera.squareDistances(cellCenter, radialSqDist, sqDistToOrigin);
 
 					double dx = sqrt(sqDistToOrigin);
 					double dy = std::max<double>(0, sqrt(radialSqDist) - SQRT_3 * halfCellSize);
@@ -672,7 +672,7 @@ bool ccOctree::pointPicking(const CCVector2d& clickPos,
 				else
 				{
 					skipThisCell = !AABB<PointCoordinateType>(	cellCenter - halfCell - margin,
-																cellCenter + halfCell + margin).intersects(rayLocal);
+																cellCenter + halfCell + margin).intersects(rayCamera);
 				}
 
 				if (skipThisCell)

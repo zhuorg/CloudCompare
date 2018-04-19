@@ -621,38 +621,39 @@ bool ccCameraSensor::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 	return true;
 }
 
-bool ccCameraSensor::fromLocalCoordToGlobalCoord(const CCVector3& localCoord, CCVector3& globalCoord) const
+bool ccCameraSensor::fromSensorToWorld(const CCVector3& sensorCoord, CCVector3& worldCoord) const
 {
 	ccIndexedTransformation trans;
 
 	if (!getActiveAbsoluteTransformation(trans))
 		return false;
 
-	globalCoord = localCoord;
-	trans.apply(globalCoord);
+	worldCoord = sensorCoord;
+	trans.apply(worldCoord);
 
 	return true;
 }
 
-bool ccCameraSensor::fromGlobalCoordToLocalCoord(const CCVector3& globalCoord, CCVector3& localCoord) const
+
+bool ccCameraSensor::fromWorldToSensor(const CCVector3& worldCoord, CCVector3& sensorCoord) const
 {
 	ccIndexedTransformation trans;
 
 	if (!getActiveAbsoluteTransformation(trans))
 		return false;
 
-	localCoord = globalCoord;
-	trans.inverse().apply(localCoord);
+	sensorCoord = worldCoord;
+	trans.inverse().apply(sensorCoord);
 
 	return true;
 }
 
-bool ccCameraSensor::fromLocalCoordToImageCoord(const CCVector3& localCoord, CCVector2& imageCoord, bool withLensError/*=true*/) const
+bool ccCameraSensor::fromSensorToImage(const CCVector3& sensorCoord, CCVector2& imageCoord, bool correctDistortion/*=true*/) const
 {
 #ifdef CHECK_THIS_AFTERWARDS
 
 	// Change in 3D image coordinates system for good projection
-	CCVector3 imageCoordSystem(localCoord.x, localCoord.y, -localCoord.z);
+	CCVector3 imageCoordSystem(sensorCoord.x, sensorCoord.y, -sensorCoord.z);
 
 	// We test if the point is in front or behind the sensor ? If it is behind (or in the center of the sensor i.e. z=0.0), we can't project!
 	if (imageCoordSystem.z < FLT_EPSILON)
@@ -684,7 +685,7 @@ bool ccCameraSensor::fromLocalCoordToImageCoord(const CCVector3& localCoord, CCV
 #else
 
 	// We test if the point is in front or behind the sensor ? If it is behind (or in the center of the sensor i.e. depth = 0), we can't project!
-	double depth = -static_cast<double>(localCoord.z); //warning: the camera looks backward!
+	double depth = -static_cast<double>(sensorCoord.z); //warning: the camera looks backward!
 #define BACK_POINTS_CULLING
 #ifdef BACK_POINTS_CULLING
 	if (depth < FLT_EPSILON)
@@ -692,13 +693,13 @@ bool ccCameraSensor::fromLocalCoordToImageCoord(const CCVector3& localCoord, CCV
 #endif
 
 	//perspective division
-	CCVector2d p(localCoord.x / depth, localCoord.y / depth);
+	CCVector2d p(sensorCoord.x / depth, sensorCoord.y / depth);
 
 	//conversion to pixel coordinates
 	double factor = m_intrinsicParams.vertFocal_pix;
 
 	//apply radial distortion (if any)
-	if (withLensError && m_distortionParams)
+	if (correctDistortion && m_distortionParams)
 	{
 		if (m_distortionParams->getModel() == SIMPLE_RADIAL_DISTORTION)
 		{
@@ -730,7 +731,7 @@ bool ccCameraSensor::fromLocalCoordToImageCoord(const CCVector3& localCoord, CCV
 	return true;
 }
 
-bool ccCameraSensor::fromImageCoordToLocalCoord(const CCVector2& imageCoord, CCVector3& localCoord, PointCoordinateType depth, bool withLensCorrection/*=true*/) const
+bool ccCameraSensor::fromImageToSensor(const CCVector2& imageCoord, CCVector3& sensorCoord, PointCoordinateType depth, bool correctDistortion/*=true*/) const
 {
 	CCVector3d p2(imageCoord.x, imageCoord.y, 0.0);
 
@@ -744,35 +745,35 @@ bool ccCameraSensor::fromImageCoordToLocalCoord(const CCVector2& imageCoord, CCV
 	CCVector3d p = p2 / factor;
 
 	//perspective
-	localCoord = CCVector3(	static_cast<PointCoordinateType>(p.x * depth),
+	sensorCoord = CCVector3(	static_cast<PointCoordinateType>(p.x * depth),
 							static_cast<PointCoordinateType>(p.y * depth),
 							-depth);
 
 	return true;
 }
 
-bool ccCameraSensor::fromGlobalCoordToImageCoord(const CCVector3& globalCoord, CCVector2& imageCoord, bool withLensError/*=true*/) const
+bool ccCameraSensor::fromWorldToImage(const CCVector3& worldCoord, CCVector2& imageCoord, bool correctDistortion/*=true*/) const
 {
-	CCVector3 localCoord;
-	if (!fromGlobalCoordToLocalCoord(globalCoord,localCoord))
+	CCVector3 sensorCoord;
+	if (!fromWorldToSensor(worldCoord, sensorCoord))
 		return false;
 
-	return fromLocalCoordToImageCoord(localCoord, imageCoord, withLensError);
+	return fromSensorToImage(sensorCoord, imageCoord, correctDistortion);
 }
 
-bool ccCameraSensor::fromImageCoordToGlobalCoord(const CCVector2& imageCoord, CCVector3& globalCoord, PointCoordinateType z0, bool withLensCorrection/*=true*/) const
+bool ccCameraSensor::fromImageToWorld(const CCVector2& imageCoord, CCVector3& worldCoord, PointCoordinateType z0, bool correctDistortion/*=true*/) const
 {
 	ccIndexedTransformation trans;
 
 	if (!getActiveAbsoluteTransformation(trans))
 		return false;
 
-	CCVector3 localCoord;
-	if (!fromImageCoordToLocalCoord(imageCoord, localCoord, PC_ONE, withLensCorrection))
+	CCVector3 sensorCoord;
+	if (!fromImageToSensor(imageCoord, sensorCoord, PC_ONE, correctDistortion))
 		return false;
 
 	//update altitude: we must compute the intersection between the plane Z = Z0 (world) and the camera (input pixel) viewing direction
-	CCVector3 viewDir = localCoord;
+	CCVector3 viewDir = sensorCoord;
 	trans.applyRotation(viewDir);
 	viewDir.normalize();
 
@@ -791,7 +792,7 @@ bool ccCameraSensor::fromImageCoordToGlobalCoord(const CCVector2& imageCoord, CC
 		return false; //wrong direction!
 #endif
 
-	globalCoord = camC + u * viewDir;
+	worldCoord = camC + u * viewDir;
 
 	return true;
 }
@@ -957,14 +958,14 @@ bool ccCameraSensor::computeUncertainty(CCLib::ReferenceCloud* points, std::vect
 
 	for (unsigned i = 0; i < count; i++)
 	{
-		const CCVector3* coordGlobal = points->getPoint(i);
-		CCVector3 coordLocal;
+		const CCVector3* coordWorld = points->getPoint(i);
+		CCVector3 coordSensor;
 		CCVector2 coordImage;
 
-		if (	fromGlobalCoordToLocalCoord(*coordGlobal,coordLocal)
-			&&	fromLocalCoordToImageCoord(coordLocal, coordImage) )
+		if (	fromWorldToSensor(*coordWorld,coordSensor)
+			&&	fromSensorToImage(coordSensor, coordImage) )
 		{
-			computeUncertainty(coordImage, std::abs(coordLocal.z), accuracy[i]);
+			computeUncertainty(coordImage, std::abs(coordSensor.z), accuracy[i]);
 		}
 		else
 		{
@@ -1121,16 +1122,16 @@ ccImage* ccCameraSensor::undistort(ccImage* image, bool inplace/*=true*/) const
 	}
 }
 
-bool ccCameraSensor::isGlobalCoordInFrustum(const CCVector3& globalCoord/*, bool withLensCorrection*/) const
+bool ccCameraSensor::isWorldCoordInFrustum(const CCVector3& worldCoord/*, bool correctDistortion*/) const
 {
-	CCVector3 localCoord;
+	CCVector3 sensorCoord;
 
 	// Tests if the projection is in the field of view
-	if (!fromGlobalCoordToLocalCoord(globalCoord, localCoord/*, withLensCorrection*/))
+	if (!fromWorldToSensor(worldCoord, sensorCoord/*, correctDistortion*/))
 		return false;
 
 	// Tests if the projected point is between zNear and zFar
-	const float& z = localCoord.z;
+	const float& z = sensorCoord.z;
 	const float& n = m_intrinsicParams.zNear_mm;
 	const float& f = m_intrinsicParams.zFar_mm;
 
@@ -1201,7 +1202,7 @@ bool ccCameraSensor::computeFrustumCorners()
 	return true;
 }
 
-bool ccCameraSensor::computeGlobalPlaneCoefficients(float planeCoefficients[6][4], CCVector3 frustumCorners[8], CCVector3 edges[6], CCVector3& center)
+bool ccCameraSensor::computeWorldPlaneCoefficients(float planeCoefficients[6][4], CCVector3 frustumCorners[8], CCVector3 edges[6], CCVector3& center)
 {
 	if (!m_frustumInfos.isComputed)
 		if (!computeFrustumCorners())
@@ -1210,14 +1211,14 @@ bool ccCameraSensor::computeGlobalPlaneCoefficients(float planeCoefficients[6][4
 	assert(m_frustumInfos.frustumCorners && m_frustumInfos.frustumCorners->size() == 8);
 
 	// compute frustum corners in the global coordinates system
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(0), frustumCorners[0]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(1), frustumCorners[1]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(2), frustumCorners[2]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(3), frustumCorners[3]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(4), frustumCorners[4]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(5), frustumCorners[5]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(6), frustumCorners[6]);
-	fromLocalCoordToGlobalCoord(*m_frustumInfos.frustumCorners->getPoint(7), frustumCorners[7]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(0), frustumCorners[0]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(1), frustumCorners[1]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(2), frustumCorners[2]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(3), frustumCorners[3]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(4), frustumCorners[4]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(5), frustumCorners[5]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(6), frustumCorners[6]);
+	fromSensorToWorld(*m_frustumInfos.frustumCorners->getPoint(7), frustumCorners[7]);
 
 	/*
 	//-- METHOD 1 --//
@@ -1319,7 +1320,7 @@ bool ccCameraSensor::computeGlobalPlaneCoefficients(float planeCoefficients[6][4
 	}
 
 	// compute frustum center in the global coordinates system
-	fromLocalCoordToGlobalCoord(m_frustumInfos.center, center);
+	fromSensorToWorld(m_frustumInfos.center, center);
 
 	return true;
 }
@@ -1749,12 +1750,12 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(	const ccImage* image,
 	{
 		CCVector2 xTopLeft(0, 0);
 		CCVector3 P3D;
-		if (!fromImageCoordToGlobalCoord(xTopLeft, P3D, Z0))
+		if (!fromImageToWorld(xTopLeft, P3D, Z0))
 			return 0;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0,0);
-		fromGlobalCoordToImageCoord(P3D,check,false);
+		fromWorldToImage(P3D,check,false);
 		assert((xTopLeft-check).norm2() < std::max(width,height)*FLT_EPSILON);
 #endif
 		corners[0] = P3D.x;
@@ -1765,12 +1766,12 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(	const ccImage* image,
 	{
 		CCVector2 xTopRight(static_cast<PointCoordinateType>(width), 0);
 		CCVector3 P3D;
-		if (!fromImageCoordToGlobalCoord(xTopRight, P3D, Z0))
+		if (!fromImageToWorld(xTopRight, P3D, Z0))
 			return 0;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0,0);
-		fromGlobalCoordToImageCoord(P3D,check,false);
+		fromWorldToImage(P3D,check,false);
 		assert((xTopRight-check).norm2() < std::max(width,height)*FLT_EPSILON);
 #endif
 		corners[2] = P3D.x;
@@ -1781,12 +1782,12 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(	const ccImage* image,
 	{
 		CCVector2 xBottomRight(static_cast<PointCoordinateType>(width), static_cast<PointCoordinateType>(height));
 		CCVector3 P3D;
-		if (!fromImageCoordToGlobalCoord(xBottomRight, P3D, Z0))
+		if (!fromImageToWorld(xBottomRight, P3D, Z0))
 			return 0;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0,0);
-		fromGlobalCoordToImageCoord(P3D,check,false);
+		fromWordlToImage(P3D,check,false);
 		assert((xBottomRight-check).norm2() < std::max(width,height)*FLT_EPSILON);
 #endif
 		corners[4] = P3D.x;
@@ -1797,12 +1798,12 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(	const ccImage* image,
 	{
 		CCVector2 xBottomLeft(0, static_cast<PointCoordinateType>(height));
 		CCVector3 P3D;
-		if (!fromImageCoordToGlobalCoord(xBottomLeft, P3D, Z0))
+		if (!fromImageToWorld(xBottomLeft, P3D, Z0))
 			return 0;
 #ifdef QT_DEBUG
 		//internal check
 		CCVector2 check(0,0);
-		fromGlobalCoordToImageCoord(P3D,check,false);
+		fromWordlToImage(P3D,check,false);
 		assert((xBottomLeft-check).norm2() < std::max(width,height)*FLT_EPSILON);
 #endif
 		corners[6] = P3D.x;
@@ -1872,7 +1873,7 @@ ccImage* ccCameraSensor::orthoRectifyAsImageDirect(	const ccImage* image,
 
 			CCVector3 P3D(xip,yip,Z0);
 			CCVector2 imageCoord;
-			if (fromGlobalCoordToImageCoord(P3D,imageCoord,undistortImages))
+			if (fromWorldToImage(P3D,imageCoord,undistortImages))
 			{
 				int x = static_cast<int>(imageCoord.x);
 				int y = static_cast<int>(imageCoord.y);
