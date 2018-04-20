@@ -226,8 +226,8 @@ void ccPointListPickingDlg::exportToNewCloud()
 			}
 
 			cloud->setDisplay(m_associatedCloud->getDisplay());
-			cloud->setGlobalShift(m_associatedCloud->getGlobalShift());
-			cloud->setGlobalScale(m_associatedCloud->getGlobalScale());
+			cloud->setCoordinatesShift(m_associatedCloud->getCoordinatesShift());
+			cloud->setCoordinatesScaleMultiplier(m_associatedCloud->getCoordinatesScaleMultiplier());
 			MainWindow::TheInstance()->addToDB(cloud);
 		}
 		else
@@ -273,8 +273,8 @@ void ccPointListPickingDlg::exportToNewPolyline()
 		polyline->addPointIndex(0, count);
 		polyline->setVisible(true);
 		vertices->setEnabled(false);
-		polyline->setGlobalShift(m_associatedCloud->getGlobalShift());
-		polyline->setGlobalScale(m_associatedCloud->getGlobalScale());
+		polyline->setCoordinatesShift(m_associatedCloud->getCoordinatesShift());
+		polyline->setCoordinatesScaleMultiplier(m_associatedCloud->getCoordinatesScaleMultiplier());
 		polyline->addChild(vertices);
 		polyline->setDisplay_recursive(m_associatedCloud->getDisplay());
 
@@ -416,8 +416,8 @@ void ccPointListPickingDlg::exportToASCII(ExportFormat format)
 	}
 
 	//if a global shift exists, ask the user if it should be applied
-	CCVector3d shift = m_associatedCloud->getGlobalShift();
-	double scale = m_associatedCloud->getGlobalScale();
+	CCVector3d shift = m_associatedCloud->getCoordinatesShift();
+	double scale = m_associatedCloud->getCoordinatesScaleMultiplier();
 
 	if (shift.norm2() != 0 || scale != 1.0)
 	{
@@ -493,7 +493,7 @@ void ccPointListPickingDlg::updateList()
 	{
 		const cc2DLabel::PickedPoint& PP = labels[i]->getPoint(0);
 		const CCVector3* P = PP.cloud->getPoint(PP.index);
-		CCVector3d Pd = (showAbsolute ? PP.cloud->toGlobal3d(*P) : CCVector3d::fromArray(P->u));
+		CCVector3d Pd = (showAbsolute ? PP.cloud->toOriginalCoordinatesd(*P) : CCVector3d::fromArray(P->u));
 
 		//point index in list
 		tableWidget->setVerticalHeaderItem(i, new QTableWidgetItem(QString("%1").arg(i + startIndex)));

@@ -245,21 +245,21 @@ CC_FILE_ERROR MascaretFilter::saveToFile(ccHObject* entity, const QString& filen
 		// - first point
 		{
 			const CCVector3* firstP = poly->getPoint(0);
-			CCVector3d firstPg = poly->toGlobal3d(*firstP);
+			CCVector3d firstPg = poly->toOriginalCoordinatesd(*firstP);
 			outFile << " ";
 			outFile << firstPg.u[xDir] << " " << firstPg.u[yDir];
 		}
 		// - last point
 		{
 			const CCVector3* lastP = poly->getPoint(vertCount-1);
-			CCVector3d lastPg = poly->toGlobal3d(*lastP);
+			CCVector3d lastPg = poly->toOriginalCoordinatesd(*lastP);
 			outFile << " ";
 			outFile << lastPg.u[xDir] << " " << lastPg.u[yDir];
 		}
 		// - profile/path intersection point
 		{
 			outFile << " AXE ";
-			CCVector3d Cdg = poly->toGlobal3d(Cd);
+			CCVector3d Cdg = poly->toOriginalCoordinatesd(Cd);
 			outFile << Cdg.u[xDir] << " " << Cdg.u[yDir];
 		}
 #endif
@@ -296,7 +296,7 @@ CC_FILE_ERROR MascaretFilter::saveToFile(ccHObject* entity, const QString& filen
 				//for "geo"-mascaret, we add some more information:
 				// - real coordinates of the point
 				outFile << " ";
-				CCVector3d Pg = poly->toGlobal3d(*P);
+				CCVector3d Pg = poly->toOriginalCoordinatesd(*P);
 				outFile << Pg.u[xDir] << " " << Pg.u[yDir];
 			}
 #endif

@@ -41,8 +41,8 @@ ccPolyline::ccPolyline(GenericIndexedCloudPersist* associatedCloud)
 	ccGenericPointCloud* cloud = dynamic_cast<ccGenericPointCloud*>(associatedCloud);
 	if (cloud)
 	{
-		setGlobalScale(cloud->getGlobalScale());
-		setGlobalShift(cloud->getGlobalShift());
+		setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
+		setCoordinatesShift(cloud->getCoordinatesShift());
 	}
 }
 
@@ -113,8 +113,8 @@ void ccPolyline::importParametersFrom(const ccPolyline& poly)
 	setVertexMarkerWidth(poly.getVertexMarkerWidth());
 	setVisible(poly.isVisible());
 	showArrow(m_showArrow,m_arrowIndex,m_arrowLength);
-	setGlobalScale(poly.getGlobalScale());
-	setGlobalShift(poly.getGlobalShift());
+	setCoordinatesScaleMultiplier(poly.getCoordinatesScaleMultiplier());
+	setCoordinatesShift(poly.getCoordinatesShift());
 	setGLTransformationHistory(poly.getGLTransformationHistory());
 	setMetaData(poly.metaData());
 }
@@ -405,8 +405,8 @@ bool ccPolyline::fromFile_MeOnly(QFile& in, short dataVersion, int flags)
 	}
 	else
 	{
-		m_globalScale = 1.0;
-		m_globalShift = CCVector3d(0,0,0);
+		m_coordScale = 1.0;
+		m_coordShift = CCVector3d(0,0,0);
 	}
 
 	QDataStream inStream(&in);
@@ -565,27 +565,27 @@ unsigned ccPolyline::segmentCount() const
 	return count;
 }
 
-void ccPolyline::setGlobalShift(const CCVector3d& shift)
+void ccPolyline::setCoordinatesShift(const CCVector3d& shift)
 {
-	ccShiftedObject::setGlobalShift(shift);
+	ccShiftedObject::setCoordinatesShift(shift);
 
 	ccPointCloud* pc = dynamic_cast<ccPointCloud*>(m_theAssociatedCloud);
 	if (pc && pc->getParent() == this)
 	{
 		//auto transfer the global shift info to the vertices
-		pc->setGlobalShift(shift);
+		pc->setCoordinatesShift(shift);
 	}
 }
 
-void ccPolyline::setGlobalScale(double scale)
+void ccPolyline::setCoordinatesScaleMultiplier(double scale)
 {
-	ccShiftedObject::setGlobalScale(scale);
+	ccShiftedObject::setCoordinatesScaleMultiplier(scale);
 
 	ccPointCloud* pc = dynamic_cast<ccPointCloud*>(m_theAssociatedCloud);
 	if (pc && pc->getParent() == this)
 	{
 		//auto transfer the global scale info to the vertices
-		pc->setGlobalScale(scale);
+		pc->setCoordinatesScaleMultiplier(scale);
 	}
 }
 
@@ -685,8 +685,8 @@ ccPointCloud* ccPolyline::samplePoints(	bool densityBased,
 	}
 
 	//import parameters from the source
-	cloud->setGlobalShift(getGlobalShift());
-	cloud->setGlobalScale(getGlobalScale());
+	cloud->setCoordinatesShift(getCoordinatesShift());
+	cloud->setCoordinatesScaleMultiplier(getCoordinatesScaleMultiplier());
 	cloud->setGLTransformationHistory(getGLTransformationHistory());
 
 	return cloud;

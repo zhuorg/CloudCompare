@@ -89,7 +89,7 @@ CC_FILE_ERROR OFFFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		for (unsigned i = 0; i < vertCount; ++i)
 		{
 			const CCVector3* P = vertices->getPoint(i);
-			CCVector3d Pglobal = vertices->toGlobal3d<PointCoordinateType>(*P);
+			CCVector3d Pglobal = vertices->toOriginalCoordinatesd<PointCoordinateType>(*P);
 			stream << Pglobal.x << ' ' << Pglobal.y << ' ' << Pglobal.z << endl;
 		}
 	}
@@ -208,7 +208,7 @@ CC_FILE_ERROR OFFFilter::loadFile(const QString& filename, ccHObject& container,
 			{
 				if (HandleGlobalShift(Pd,Pshift,parameters))
 				{
-					vertices->setGlobalShift(Pshift);
+					vertices->setCoordinatesShift(Pshift);
 					ccLog::Warning("[OFF] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)",Pshift.x,Pshift.y,Pshift.z);
 				}
 			}

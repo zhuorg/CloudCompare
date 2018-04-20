@@ -237,7 +237,7 @@ CC_FILE_ERROR PTXFilter::loadFile(	const QString& filename,
 		}
 
 		//set global shift
-		cloud->setGlobalShift(PshiftTrans);
+		cloud->setCoordinatesShift(PshiftTrans);
 
 		//intensities
 		ccScalarField* intensitySF = new ccScalarField(CC_PTX_INTENSITY_FIELD_NAME);
@@ -345,7 +345,7 @@ CC_FILE_ERROR PTXFilter::loadFile(	const QString& filename,
 								CCVector3d P(Pd);
 								if (HandleGlobalShift(P, PshiftCloud, parameters))
 								{
-									cloud->setGlobalShift(PshiftCloud);
+									cloud->setCoordinatesShift(PshiftCloud);
 									ccLog::Warning("[PTXFilter::loadFile] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)", PshiftCloud.x, PshiftCloud.y, PshiftCloud.z);
 								}
 							}

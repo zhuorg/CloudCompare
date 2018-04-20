@@ -921,8 +921,8 @@ bool ccClippingBoxTool::ExtractSlicesAndContours
 							ccPolyline* poly = polys[p];
 							poly->setColor(ccColor::green);
 							poly->showColors(true);
-							poly->setGlobalScale(sliceCloud->getGlobalScale());
-							poly->setGlobalShift(sliceCloud->getGlobalShift());
+							poly->setCoordinatesScaleMultiplier(sliceCloud->getCoordinatesScaleMultiplier());
+							poly->setCoordinatesShift(sliceCloud->getCoordinatesShift());
 							QString contourName = sliceCloud->getName();
 							contourName.replace("slice", "contour");
 							if (polys.size() > 1)

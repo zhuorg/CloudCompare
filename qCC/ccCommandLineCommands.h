@@ -883,8 +883,8 @@ struct CommandExtractCCs : public ccCommandLineInterface::Command
 						if (compCloud)
 						{
 							//'shift on load' information
-							compCloud->setGlobalShift(cloud->getGlobalShift());
-							compCloud->setGlobalScale(cloud->getGlobalScale());
+							compCloud->setCoordinatesShift(cloud->getCoordinatesShift());
+							compCloud->setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
 							compCloud->setName(QString(cloud->getName() + "_CC#%1").arg(j + 1));
 
 							CLCloudDesc cloudDesc(compCloud, inputClouds[i].basename + QObject::tr("_COMPONENT_%1").arg(++realIndex), inputClouds[i].path);
@@ -1285,7 +1285,7 @@ struct CommandDropGlobalShift : public ccCommandLineInterface::Command
 		//process clouds
 		for (const CLCloudDesc& desc : cmd.clouds())
 		{
-			desc.pc->setGlobalShift(0, 0, 0);
+			desc.pc->setCoordinatesShift(0, 0, 0);
 		}
 
 		for (const CLMeshDesc& desc : cmd.meshes())
@@ -1294,7 +1294,7 @@ struct CommandDropGlobalShift : public ccCommandLineInterface::Command
 			ccShiftedObject* shifted = ccHObjectCaster::ToShifted(desc.mesh, &isLocked);
 			if (shifted && !isLocked)
 			{
-				shifted->setGlobalShift(0, 0, 0);
+				shifted->setCoordinatesShift(0, 0, 0);
 			}
 		}
 

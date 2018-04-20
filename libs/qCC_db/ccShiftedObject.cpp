@@ -23,50 +23,50 @@
 
 ccShiftedObject::ccShiftedObject(QString name)
 	: ccHObject(name)
-	, m_globalShift(0,0,0)
-	, m_globalScale(1.0)
+	, m_coordShift(0,0,0)
+	, m_coordScale(1.0)
 {
 }
 
 ccShiftedObject::ccShiftedObject(const ccShiftedObject& s)
 	: ccHObject(s)
-	, m_globalShift(s.m_globalShift)
-	, m_globalScale(s.m_globalScale)
+	, m_coordShift(s.m_coordShift)
+	, m_coordScale(s.m_coordScale)
 {
 }
 
-void ccShiftedObject::setGlobalShift(const CCVector3d& shift)
+void ccShiftedObject::setCoordinatesShift(const CCVector3d& shift)
 {
-	m_globalShift = shift;
+	m_coordShift = shift;
 }
 
-void ccShiftedObject::setGlobalShift(double x, double y, double z)
+void ccShiftedObject::setCoordinatesShift(double x, double y, double z)
 {
-	m_globalShift.x = x;
-	m_globalShift.y = y;
-	m_globalShift.z = z;
+	m_coordShift.x = x;
+	m_coordShift.y = y;
+	m_coordShift.z = z;
 }
 
-void ccShiftedObject::setGlobalScale(double scale)
+void ccShiftedObject::setCoordinatesScaleMultiplier(double scale)
 {
 	if (scale == 0)
 	{
 		ccLog::Warning("[setGlobalScale] Invalid scale (zero)!");
-		m_globalScale = 1.0;
+		m_coordScale = 1.0;
 	}
 	else
 	{
-		m_globalScale = scale;
+		m_coordScale = scale;
 	}
 }
 
 bool ccShiftedObject::saveShiftInfoToFile(QFile& out) const
 {
 	//'coordinates shift'
-	if (out.write((const char*)m_globalShift.u,sizeof(double)*3) < 0)
+	if (out.write((const char*)m_coordShift.u,sizeof(double)*3) < 0)
 		return ccSerializableObject::WriteError();
 	//'global scale'
-	if (out.write((const char*)&m_globalScale,sizeof(double)) < 0)
+	if (out.write((const char*)&m_coordScale,sizeof(double)) < 0)
 		return ccSerializableObject::WriteError();
 
 	return true;
@@ -75,10 +75,10 @@ bool ccShiftedObject::saveShiftInfoToFile(QFile& out) const
 bool ccShiftedObject::loadShiftInfoFromFile(QFile& in)
 {
 	//'coordinates shift'
-	if (in.read((char*)m_globalShift.u,sizeof(double)*3) < 0)
+	if (in.read((char*)m_coordShift.u,sizeof(double)*3) < 0)
 		return ccSerializableObject::ReadError();
 	//'global scale'
-	if (in.read((char*)&m_globalScale,sizeof(double)) < 0)
+	if (in.read((char*)&m_coordScale,sizeof(double)) < 0)
 		return ccSerializableObject::ReadError();
 
 	return true;
@@ -87,7 +87,7 @@ bool ccShiftedObject::loadShiftInfoFromFile(QFile& in)
 bool ccShiftedObject::getGlobalBB(CCVector3d& minCorner, CCVector3d& maxCorner)
 {
 	ccBBox box = getOwnBB(false);
-	minCorner = toGlobal3d(box.minCorner());
-	maxCorner = toGlobal3d(box.maxCorner());
+	minCorner = toOriginalCoordinatesd(box.minCorner());
+	maxCorner = toOriginalCoordinatesd(box.maxCorner());
 	return box.isValid();
 }

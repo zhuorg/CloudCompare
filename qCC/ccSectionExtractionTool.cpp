@@ -605,8 +605,8 @@ bool ccSectionExtractionTool::addPolyline(ccPolyline* inputPoly, bool alreadyInD
 			duplicatePoly->set2DMode(false);
 			duplicatePoly->setDisplay_recursive(inputPoly->getDisplay());
 			duplicatePoly->setName(inputPoly->getName());
-			duplicatePoly->setGlobalScale(inputPoly->getGlobalScale());
-			duplicatePoly->setGlobalShift(inputPoly->getGlobalShift());
+			duplicatePoly->setCoordinatesScaleMultiplier(inputPoly->getCoordinatesScaleMultiplier());
+			duplicatePoly->setCoordinatesShift(inputPoly->getCoordinatesShift());
 
 			if (!alreadyInDB)
 				delete inputPoly;
@@ -666,11 +666,11 @@ bool ccSectionExtractionTool::addCloud(ccGenericPointCloud* inputCloud, bool alr
 			return false;
 		}
 
-		//test (on the first cloud) that the global shift & scale info is the same
+		//test (on the first cloud) that the coordinate shift & scale info is the same
 		if (!s_mixedShiftAndScaleInfo && it == m_clouds.begin())
 		{
-			if (cloud.entity->getGlobalScale() != inputCloud->getGlobalScale()
-				|| (cloud.entity->getGlobalShift() - inputCloud->getGlobalShift()).norm() < ZERO_TOLERANCE)
+			if (cloud.entity->getCoordinatesScaleMultiplier() != inputCloud->getCoordinatesScaleMultiplier()
+				|| (cloud.entity->getCoordinatesShift() - inputCloud->getCoordinatesShift()).norm() < ZERO_TOLERANCE)
 			{
 				ccLog::Warning("[ccSectionExtractionTool] Clouds have different shift & scale information! Only the first one will be used");
 				s_mixedShiftAndScaleInfo = true;
@@ -745,8 +745,8 @@ void ccSectionExtractionTool::addPointToPolyline(int x, int y)
 		if (!m_clouds.empty() && m_clouds.front().entity)
 		{
 			ccGenericPointCloud* cloud = m_clouds.front().entity;
-			m_editedPoly->setGlobalScale(cloud->getGlobalScale());
-			m_editedPoly->setGlobalShift(cloud->getGlobalShift());
+			m_editedPoly->setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
+			m_editedPoly->setCoordinatesShift(cloud->getCoordinatesShift());
 		}
 		m_editedPoly->addChild(m_editedPolyVertices);
 		m_associatedWin->addToOwnDB(m_editedPoly);
@@ -1110,8 +1110,8 @@ void ccSectionExtractionTool::generateOrthoSections()
 
 					orthoPoly->setClosed(false);
 					orthoPoly->set2DMode(false);
-					orthoPoly->setGlobalScale(poly->getGlobalScale());
-					orthoPoly->setGlobalShift(poly->getGlobalShift());
+					orthoPoly->setCoordinatesScaleMultiplier(poly->getCoordinatesScaleMultiplier());
+					orthoPoly->setCoordinatesShift(poly->getCoordinatesShift());
 
 					//set default display style
 					vertices->setEnabled(false);
@@ -1356,8 +1356,8 @@ bool ccSectionExtractionTool::extractSectionContour(const ccPolyline* originalSe
 			if (parts.size() > 1)
 				name += QString("(part %1/%2)").arg(p + 1).arg(parts.size());
 			contourPart->setName(name);
-			contourPart->setGlobalScale(originalSectionCloud->getGlobalScale());
-			contourPart->setGlobalShift(originalSectionCloud->getGlobalShift());
+			contourPart->setCoordinatesScaleMultiplier(originalSectionCloud->getCoordinatesScaleMultiplier());
+			contourPart->setCoordinatesShift(originalSectionCloud->getCoordinatesShift());
 			contourPart->setColor(s_defaultContourColor);
 			contourPart->showColors(true);
 			//copy meta-data (import for Mascaret export!)
@@ -1712,8 +1712,8 @@ void ccSectionExtractionTool::unfoldPoints()
 			unfoldedCloud->invalidateBoundingBox();
 
 			unfoldedCloud->setName(cloud->getName() + ".unfolded");
-			unfoldedCloud->setGlobalShift(cloud->getGlobalShift());
-			unfoldedCloud->setGlobalScale(cloud->getGlobalScale());
+			unfoldedCloud->setCoordinatesShift(cloud->getCoordinatesShift());
+			unfoldedCloud->setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
 
 			unfoldedCloud->shrinkToFit();
 			unfoldedCloud->setDisplay(m_clouds[c].originalDisplay);
@@ -1899,8 +1899,8 @@ void ccSectionExtractionTool::extractPoints()
 					//assign them the default (first!) global shift & scale info
 					assert(!m_clouds.empty());
 					ccGenericPointCloud* cloud = m_clouds.front().entity;
-					originalSlicePoints->setGlobalScale(cloud->getGlobalScale());
-					originalSlicePoints->setGlobalShift(cloud->getGlobalShift());
+					originalSlicePoints->setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
+					originalSlicePoints->setCoordinatesShift(cloud->getCoordinatesShift());
 				}
 
 				//for each cloud

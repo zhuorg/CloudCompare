@@ -378,7 +378,7 @@ CC_FILE_ERROR PlyFilter::saveToFile(ccHObject* entity, QString filename, e_ply_s
 	for (unsigned i=0; i<vertCount; ++i)
 	{
 		const CCVector3* P = vertices->getPoint(i);
-		CCVector3d Pglobal = vertices->toGlobal3d<PointCoordinateType>(*P);
+		CCVector3d Pglobal = vertices->toOriginalCoordinatesd<PointCoordinateType>(*P);
 		ply_write(ply, Pglobal.x);
 		ply_write(ply, Pglobal.y);
 		ply_write(ply, Pglobal.z);
@@ -506,7 +506,7 @@ static int vertex_cb(p_ply_argument argument)
 		{
 			if (FileIOFilter::HandleGlobalShift(s_Point, s_Pshift, s_loadParameters))
 			{
-				cloud->setGlobalShift(s_Pshift);
+				cloud->setCoordinatesShift(s_Pshift);
 				ccLog::Warning("[PLYFilter::loadFile] Cloud (vertices) has been recentered! Translation: (%.2f ; %.2f ; %.2f)", s_Pshift.x, s_Pshift.y, s_Pshift.z);
 			}
 		}

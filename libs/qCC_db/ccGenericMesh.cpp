@@ -860,8 +860,8 @@ ccPointCloud* ccGenericMesh::samplePoints(	bool densityBased,
 	ccGenericPointCloud* vertices = getAssociatedCloud();
 	if (vertices)
 	{
-		cloud->setGlobalShift(vertices->getGlobalShift());
-		cloud->setGlobalScale(vertices->getGlobalScale());
+		cloud->setCoordinatesShift(vertices->getCoordinatesShift());
+		cloud->setCoordinatesScaleMultiplier(vertices->getCoordinatesScaleMultiplier());
 	}
 	cloud->setGLTransformationHistory(getGLTransformationHistory());
 

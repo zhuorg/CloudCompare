@@ -413,7 +413,7 @@ void AddPointCoordinates(QStringList& body, unsigned pointIndex, ccGenericPointC
 
 	if (isShifted)
 	{
-		CCVector3d Pg = cloud->toGlobal3d(*P);
+		CCVector3d Pg = cloud->toOriginalCoordinatesd(*P);
 		QString globCoordStr = QString("  [original] (%1;%2;%3)").arg(Pg.x, 0, 'f', precision).arg(Pg.y, 0, 'f', precision).arg(Pg.z, 0, 'f', precision);
 		body << globCoordStr;
 	}
@@ -1100,7 +1100,7 @@ void cc2DLabel::drawMeOnly2D(CC_DRAW_CONTEXT& context)
 						if (isShifted)
 						{
 							int c = tab.add2x3Block();
-							CCVector3d P = info.cloud->toGlobal3d(*info.cloud->getPoint(info.pointIndex));
+							CCVector3d P = info.cloud->toOriginalCoordinatesd(*info.cloud->getPoint(info.pointIndex));
 							tab.colContent[c] << "Xg"; tab.colContent[c + 1] << QString::number(P.x, 'f', precision);
 							tab.colContent[c] << "Yg"; tab.colContent[c + 1] << QString::number(P.y, 'f', precision);
 							tab.colContent[c] << "Zg"; tab.colContent[c + 1] << QString::number(P.z, 'f', precision);

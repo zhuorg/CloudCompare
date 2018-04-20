@@ -957,11 +957,11 @@ const ccPointCloud& ccPointCloud::append(ccPointCloud* addedCloud, unsigned poin
 			if (!isShifted())
 			{
 				//we can keep the global shift information of the merged cloud
-				setGlobalShift(addedCloud->getGlobalShift());
-				setGlobalScale(addedCloud->getGlobalScale());
+				setCoordinatesShift(addedCloud->getCoordinatesShift());
+				setCoordinatesScaleMultiplier(addedCloud->getCoordinatesScaleMultiplier());
 			}
-			else if (	getGlobalScale() != addedCloud->getGlobalScale()
-					||	(getGlobalShift() - addedCloud->getGlobalShift()).norm2d() > 1.0e-6)
+			else if (	getCoordinatesScaleMultiplier() != addedCloud->getCoordinatesScaleMultiplier()
+					||	(getCoordinatesShift() - addedCloud->getCoordinatesShift()).norm2d() > 1.0e-6)
 			{
 				//the clouds have different shift & scale information!
 				ccLog::Warning(QString("[ccPointCloud::fusion] Global shift/scale information conflict: shift/scale of cloud '%1' will be ignored!").arg(addedCloud->getName()));

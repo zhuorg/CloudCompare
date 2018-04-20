@@ -82,7 +82,7 @@ CC_FILE_ERROR HeightProfileFilter::saveToFile(ccHObject* entity, const QString& 
 		lastP = P;
 
 		//convert to 'local' coordinate system
-		CCVector3d Pg = poly->toGlobal3d(*P);
+		CCVector3d Pg = poly->toOriginalCoordinatesd(*P);
 		outFile << s << "; " << Pg.z << endl;
 	}
 

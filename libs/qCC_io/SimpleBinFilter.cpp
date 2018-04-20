@@ -73,7 +73,7 @@ CC_FILE_ERROR SimpleBinFilter::saveToFile(ccHObject* root, const QString& filena
 		headerFile.setValue("Points", cloud->size());
 
 		//save the global shift (if any)
-		const CCVector3d& globalShift = cloud->getGlobalShift();
+		const CCVector3d& globalShift = cloud->getCoordinatesShift();
 		if (globalShift.norm2() != 0)
 		{
 			QStringList strGlobalShift;
@@ -83,7 +83,7 @@ CC_FILE_ERROR SimpleBinFilter::saveToFile(ccHObject* root, const QString& filena
 			headerFile.setValue("GlobalShift", strGlobalShift);
 		}
 
-		double globalScale = cloud->getGlobalScale();
+		double globalScale = cloud->getCoordinatesScaleMultiplier();
 		if (globalScale != 1.0)
 		{
 			headerFile.setValue("GlobalScale", globalScale);
@@ -135,7 +135,7 @@ CC_FILE_ERROR SimpleBinFilter::saveToFile(ccHObject* root, const QString& filena
 
 	//internal coordinate shift (to avoid losing precision)
 	//warning: may be different from the cloud 'Global Shift'
-	CCVector3d coordinatesShift = cloud->toGlobal3d(*cloud->getPoint(0));
+	CCVector3d coordinatesShift = cloud->toOriginalCoordinatesd(*cloud->getPoint(0));
 
 	//header
 	{
@@ -198,7 +198,7 @@ CC_FILE_ERROR SimpleBinFilter::saveToFile(ccHObject* root, const QString& filena
 	for (unsigned i = 0; i < pointCount; ++i)
 	{
 		//save the point coordinates
-		CCVector3d Pd = cloud->toGlobal3d(*cloud->getPoint(i));
+		CCVector3d Pd = cloud->toOriginalCoordinatesd(*cloud->getPoint(i));
 		CCVector3f coords = CCVector3f::fromArray((Pd - coordinatesShift).u);
 		dataStream << coords.x;
 		dataStream << coords.y;
@@ -541,7 +541,7 @@ CC_FILE_ERROR SimpleBinFilter::loadFile(const QString& filename, ccHObject& cont
 			{
 				//set global shift
 				descriptor.globalShift = Pshift;
-				cloud->setGlobalShift(descriptor.globalShift);
+				cloud->setCoordinatesShift(descriptor.globalShift);
 				ccLog::Warning("[SBF] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)", descriptor.globalShift.x, descriptor.globalShift.y, descriptor.globalShift.z);
 			}
 

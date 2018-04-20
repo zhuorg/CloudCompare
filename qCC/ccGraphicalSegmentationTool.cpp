@@ -936,8 +936,8 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 					bool isShifted = (shifted && shifted->isShifted());
 					if (isShifted)
 					{
-						globalShift = shifted->getGlobalShift();
-						globalScale = shifted->getGlobalScale();
+						globalShift = shifted->getCoordinatesShift();
+						globalScale = shifted->getCoordinatesScaleMultiplier();
 						hasGlobalShift = true;
 						break;
 					}
@@ -951,8 +951,8 @@ void ccGraphicalSegmentationTool::doExportSegmentationPolyline()
 
 			if (hasGlobalShift)
 			{
-				poly->setGlobalShift(globalShift);
-				poly->setGlobalScale(globalScale);
+				poly->setCoordinatesShift(globalShift);
+				poly->setCoordinatesScaleMultiplier(globalScale);
 			}
 		}
 		

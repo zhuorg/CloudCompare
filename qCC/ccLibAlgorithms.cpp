@@ -708,8 +708,8 @@ namespace ccLibAlgorithms
 				cloud->prepareDisplayForRefresh_recursive();
 				
 				//don't forget the 'global shift'!
-				const CCVector3d& shift = cloud->getGlobalShift();
-				cloud->setGlobalShift(shift*scaled);
+				const CCVector3d& shift = cloud->getCoordinatesShift();
+				cloud->setCoordinatesShift(shift*scaled);
 				//DGM: nope! Not the global scale!
 			}
 			

@@ -279,7 +279,7 @@ CC_FILE_ERROR AsciiFilter::saveToFile(ccHObject* entity, const QString& filename
 
 		//write current point coordinates
 		const CCVector3* P = cloud->getPoint(i);
-		CCVector3d Pglobal = cloud->toGlobal3d<PointCoordinateType>(*P);
+		CCVector3d Pglobal = cloud->toOriginalCoordinatesd<PointCoordinateType>(*P);
 		line.append(QString::number(Pglobal.x, 'f', s_coordPrecision));
 		line.append(separator);
 		line.append(QString::number(Pglobal.y, 'f', s_coordPrecision));
@@ -845,7 +845,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 					ccLog::Error("Not enough memory! Process stopped ...");
 					break;
 				}
-				cloudDesc.cloud->setGlobalShift(Pshift);
+				cloudDesc.cloud->setCoordinatesShift(Pshift);
 			}
 
 			//we update the progress info
@@ -908,7 +908,7 @@ CC_FILE_ERROR AsciiFilter::loadCloudFromFormatedAsciiFile(	const QString& filena
 			{
 				if (HandleGlobalShift(P, Pshift, parameters))
 				{
-					cloudDesc.cloud->setGlobalShift(Pshift);
+					cloudDesc.cloud->setCoordinatesShift(Pshift);
 					ccLog::Warning("[ASCIIFilter::loadFile] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)", Pshift.x, Pshift.y, Pshift.z);
 				}
 			}

@@ -296,10 +296,10 @@ bool ccGenericPointCloud::fromFile_MeOnly(QFile& in, short dataVersion, int flag
 	if (dataVersion < 33)
 	{
 		//'coordinates shift' (dataVersion>=20)
-		if (in.read((char*)m_globalShift.u,sizeof(double)*3) < 0)
+		if (in.read((char*)m_coordShift.u,sizeof(double)*3) < 0)
 			return ReadError();
 
-		m_globalScale = 1.0;
+		m_coordScale = 1.0;
 	}
 	else
 	{
@@ -349,8 +349,8 @@ void ccGenericPointCloud::importParametersFrom(const ccGenericPointCloud* cloud)
 	}
 
 	//original center
-	setGlobalShift(cloud->getGlobalShift());
-	setGlobalScale(cloud->getGlobalScale());
+	setCoordinatesShift(cloud->getCoordinatesShift());
+	setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
 	//keep the transformation history!
 	setGLTransformationHistory(cloud->getGLTransformationHistory());
 	//custom point size

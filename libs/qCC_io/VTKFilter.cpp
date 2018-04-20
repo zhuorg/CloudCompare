@@ -112,7 +112,7 @@ CC_FILE_ERROR VTKFilter::saveToFile(ccHObject* entity, const QString& filename, 
 		for (unsigned i = 0; i < ptsCount; ++i)
 		{
 			const CCVector3* P = vertices->getPoint(i);
-			CCVector3d Pglobal = vertices->toGlobal3d<PointCoordinateType>(*P);
+			CCVector3d Pglobal = vertices->toOriginalCoordinatesd<PointCoordinateType>(*P);
 			outFile << Pglobal.x << " "
 					<< Pglobal.y << " "
 					<< Pglobal.z << endl;
@@ -350,7 +350,7 @@ CC_FILE_ERROR VTKFilter::loadFile(const QString& filename, ccHObject& container,
 						{
 							if (HandleGlobalShift(Pd, Pshift, parameters))
 							{
-								vertices->setGlobalShift(Pshift);
+								vertices->setCoordinatesShift(Pshift);
 								ccLog::Warning("[VTKFilter::loadFile] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)", Pshift.x, Pshift.y, Pshift.z);
 							}
 						}

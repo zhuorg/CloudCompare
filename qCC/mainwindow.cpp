@@ -1051,8 +1051,8 @@ void MainWindow::applyTransformation(const ccGLMatrixd& mat)
 						if (needShift || needRescale)
 						{
 							//existing shift information
-							CCVector3d globalShift = cloud->getGlobalShift();
-							double globalScale = cloud->getGlobalScale();
+							CCVector3d globalShift = cloud->getCoordinatesShift();
+							double globalScale = cloud->getCoordinatesScaleMultiplier();
 
 							//we compute the transformation matrix in the global coordinate space
 							ccGLMatrixd globalTransMat = transMat;
@@ -1090,9 +1090,9 @@ void MainWindow::applyTransformation(const ccGLMatrixd& mat)
 							if (sasDlg.exec())
 							{
 								//get the relative modification to existing global shift/scale info
-								assert(cloud->getGlobalScale() != 0);
-								scaleChange = sasDlg.getScale() / cloud->getGlobalScale();
-								shiftChange = (sasDlg.getShift() - cloud->getGlobalShift());
+								assert(cloud->getCoordinatesScaleMultiplier() != 0);
+								scaleChange = sasDlg.getScale() / cloud->getCoordinatesScaleMultiplier();
+								shiftChange = (sasDlg.getShift() - cloud->getCoordinatesShift());
 
 								updateGlobalShiftAndScale = (scaleChange != 1.0 || shiftChange.norm2() != 0);
 
@@ -1117,10 +1117,10 @@ void MainWindow::applyTransformation(const ccGLMatrixd& mat)
 				if (updateGlobalShiftAndScale)
 				{
 					//apply translation as global shift
-					cloud->setGlobalShift(cloud->getGlobalShift() + shiftChange);
-					cloud->setGlobalScale(cloud->getGlobalScale() * scaleChange);
-					const CCVector3d& T = cloud->getGlobalShift();
-					double scale = cloud->getGlobalScale();
+					cloud->setCoordinatesShift(cloud->getCoordinatesShift() + shiftChange);
+					cloud->setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier() * scaleChange);
+					const CCVector3d& T = cloud->getCoordinatesShift();
+					double scale = cloud->getCoordinatesScaleMultiplier();
 					ccLog::Warning(QString("[ApplyTransformation] Cloud '%1' global shift/scale information has been updated: shift = (%2,%3,%4) / scale = %5").arg(cloud->getName()).arg(T.x).arg(T.y).arg(T.z).arg(scale));
 				}
 			}
@@ -1288,8 +1288,8 @@ void MainWindow::doActionApplyScale()
 			//DGM: but not the global scale!
 			if (rescaleGlobalShift)
 			{
-				const CCVector3d& shift = cloud->getGlobalShift();
-				cloud->setGlobalShift( CCVector3d(	shift.x*scales.x,
+				const CCVector3d& shift = cloud->getCoordinatesShift();
+				cloud->setCoordinatesShift( CCVector3d(	shift.x*scales.x,
 													shift.y*scales.y,
 													shift.z*scales.z) );
 			}
@@ -1347,8 +1347,8 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 
 			CCVector3 Al = entity->getOwnBB().minCorner();
 			CCVector3 Bl = entity->getOwnBB().maxCorner();
-			CCVector3d Ag = shifted->toGlobal3d<PointCoordinateType>(Al);
-			CCVector3d Bg = shifted->toGlobal3d<PointCoordinateType>(Bl);
+			CCVector3d Ag = shifted->toOriginalCoordinatesd<PointCoordinateType>(Al);
+			CCVector3d Bg = shifted->toOriginalCoordinatesd<PointCoordinateType>(Bl);
 
 			//update local BB
 			localBB.add(Al);
@@ -1359,8 +1359,8 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 			{
 				globalBBmin = Ag;
 				globalBBmax = Bg;
-				shift = shifted->getGlobalShift();
-				uniqueScale = shifted->getGlobalScale();
+				shift = shifted->getCoordinatesShift();
+				uniqueScale = shifted->getCoordinatesScaleMultiplier();
 			}
 			else
 			{
@@ -1372,9 +1372,9 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 											std::max(globalBBmax.z,Bg.z) );
 
 				if (uniqueShift)
-					uniqueShift = ((shifted->getGlobalShift() - shift).norm() < ZERO_TOLERANCE);
+					uniqueShift = ((shifted->getCoordinatesShift() - shift).norm() < ZERO_TOLERANCE);
 				if (uniqueScale)
-					uniqueScale = (std::abs(shifted->getGlobalScale() - scale) < ZERO_TOLERANCE);
+					uniqueScale = (std::abs(shifted->getCoordinatesScaleMultiplier() - scale) < ZERO_TOLERANCE);
 			}
 
 			shiftedEntities.push_back(std::pair<ccShiftedObject*, ccHObject*>(shifted, entity));
@@ -1431,12 +1431,12 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 			{
 				//to preserve the global position of the cloud, we may have to translate and/or rescale the cloud
 				CCVector3d Ql = CCVector3d::fromArray(ent->getOwnBB().minCorner().u);
-				CCVector3d Qg = shifted->toGlobal3d(Ql);
+				CCVector3d Qg = shifted->toOriginalCoordinatesd(Ql);
 				CCVector3d Ql2 = Qg * scale + shift;
 				CCVector3d T = Ql2 - Ql;
 
-				assert(shifted->getGlobalScale() > 0);
-				double scaleCoef = scale / shifted->getGlobalScale();
+				assert(shifted->getCoordinatesScaleMultiplier() > 0);
+				double scaleCoef = scale / shifted->getCoordinatesScaleMultiplier();
 
 				if (T.norm() > ZERO_TOLERANCE || std::abs(scaleCoef - 1.0) > ZERO_TOLERANCE)
 				{
@@ -1457,8 +1457,8 @@ void MainWindow::doActionEditGlobalShiftAndScale()
 									.arg(scaleCoef));
 				}
 			}
-			shifted->setGlobalShift(shift);
-			shifted->setGlobalScale(scale);
+			shifted->setCoordinatesShift(shift);
+			shifted->setCoordinatesScaleMultiplier(scale);
 		}
 	}
 
@@ -3547,18 +3547,18 @@ void MainWindow::doActionRegister()
 			{
 				if (refPc->isShifted())
 				{
-					const CCVector3d& Pshift = refPc->getGlobalShift();
-					const double& scale = refPc->getGlobalScale();
-					pc->setGlobalShift(Pshift);
-					pc->setGlobalScale(scale);
+					const CCVector3d& Pshift = refPc->getCoordinatesShift();
+					const double& scale = refPc->getCoordinatesScaleMultiplier();
+					pc->setCoordinatesShift(Pshift);
+					pc->setCoordinatesScaleMultiplier(scale);
 					ccLog::Warning(QString("[ICP] Aligned entity global shift has been updated to match the reference: (%1,%2,%3) [x%4]").arg(Pshift.x).arg(Pshift.y).arg(Pshift.z).arg(scale));
 				}
 				else if (pc->isShifted()) //we'll ask the user first before dropping the shift information on the aligned cloud
 				{
 					if (QMessageBox::question(this, "Drop shift information?", "Aligned entity is shifted but reference cloud is not: drop global shift information?", QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
 					{
-						pc->setGlobalShift(0,0,0);
-						pc->setGlobalScale(1.0);
+						pc->setCoordinatesShift(0,0,0);
+						pc->setCoordinatesScaleMultiplier(1.0);
 						ccLog::Warning(QString("[ICP] Aligned entity global shift has been reset to match the reference!"));
 					}
 				}
@@ -3746,8 +3746,8 @@ void MainWindow::doActionSubsample()
 			if (newPointCloud)
 			{
 				newPointCloud->setName(cloud->getName() + QString(".subsampled"));
-				newPointCloud->setGlobalShift(cloud->getGlobalShift());
-				newPointCloud->setGlobalScale(cloud->getGlobalScale());
+				newPointCloud->setCoordinatesShift(cloud->getCoordinatesShift());
+				newPointCloud->setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
 				newPointCloud->setDisplay(cloud->getDisplay());
 				newPointCloud->prepareDisplayForRefresh();
 				if (cloud->getParent())
@@ -3881,8 +3881,8 @@ void MainWindow::createComponentsClouds(ccGenericPointCloud* cloud,
 					//'shift on load' information
 					if (pc)
 					{
-						compCloud->setGlobalShift(pc->getGlobalShift());
-						compCloud->setGlobalScale(pc->getGlobalScale());
+						compCloud->setCoordinatesShift(pc->getCoordinatesShift());
+						compCloud->setCoordinatesScaleMultiplier(pc->getCoordinatesScaleMultiplier());
 					}
 					compCloud->setVisible(true);
 					compCloud->setName(QString("CC#%1").arg(ccGroup->getChildrenNumber()));
@@ -4340,8 +4340,8 @@ void MainWindow::doConvertPolylinesToMesh()
 		}
 
 		//global shift & scale (we copy it from the first polyline by default)
-		vertices->setGlobalShift(polylines.front()->getGlobalShift());
-		vertices->setGlobalScale(polylines.front()->getGlobalScale());
+		vertices->setCoordinatesShift(polylines.front()->getCoordinatesShift());
+		vertices->setCoordinatesScaleMultiplier(polylines.front()->getCoordinatesScaleMultiplier());
 	}
 	else
 	{
@@ -7711,8 +7711,8 @@ void MainWindow::doComputePlaneOrientation(bool fitFacet)
 						ccPolyline* contour = facet->getContour();
 						if (contour)
 						{
-							contour->setGlobalScale(shifted->getGlobalScale());
-							contour->setGlobalShift(shifted->getGlobalShift());
+							contour->setCoordinatesScaleMultiplier(shifted->getCoordinatesScaleMultiplier());
+							contour->setCoordinatesShift(shifted->getCoordinatesShift());
 						}
 					}
 				}
@@ -8970,8 +8970,8 @@ void MainWindow::addToDB(	ccHObject* obj,
 				if (child->isKindOf(CC_TYPES::POINT_CLOUD))
 				{
 					ccGenericPointCloud* pc = ccHObjectCaster::ToGenericPointCloud(child);
-					pc->setGlobalShift(pc->getGlobalShift() + Pshift);
-					pc->setGlobalScale(pc->getGlobalScale() * scale);
+					pc->setCoordinatesShift(pc->getCoordinatesShift() + Pshift);
+					pc->setCoordinatesScaleMultiplier(pc->getCoordinatesScaleMultiplier() * scale);
 				}
 
 				for (unsigned i = 0; i < child->getChildrenNumber(); ++i)

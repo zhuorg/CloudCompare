@@ -149,13 +149,13 @@ void ccPointPairRegistrationDlg::clear()
 
 	m_alignedPoints.removeAllChildren();
 	m_alignedPoints.clear();
-	m_alignedPoints.setGlobalShift(0, 0, 0);
-	m_alignedPoints.setGlobalScale(1.0);
+	m_alignedPoints.setCoordinatesShift(0, 0, 0);
+	m_alignedPoints.setCoordinatesScaleMultiplier(1.0);
 	m_aligned.entity = 0;
 	m_refPoints.removeAllChildren();
 	m_refPoints.clear();
-	m_refPoints.setGlobalShift(0, 0, 0);
-	m_refPoints.setGlobalScale(1.0);
+	m_refPoints.setCoordinatesShift(0, 0, 0);
+	m_refPoints.setCoordinatesScaleMultiplier(1.0);
 	m_reference.entity = 0;
 }
 
@@ -647,8 +647,8 @@ bool ccPointPairRegistrationDlg::addAlignedPoint(CCVector3d& Pin, ccHObject* ent
 		ccGenericPointCloud* cloud = ccHObjectCaster::ToGenericPointCloud(m_aligned.entity);
 		if (cloud)
 		{
-			m_alignedPoints.setGlobalScale(cloud->getGlobalScale());
-			m_alignedPoints.setGlobalShift(cloud->getGlobalShift());
+			m_alignedPoints.setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
+			m_alignedPoints.setCoordinatesShift(cloud->getCoordinatesShift());
 		}
 	}
 
@@ -658,12 +658,12 @@ bool ccPointPairRegistrationDlg::addAlignedPoint(CCVector3d& Pin, ccHObject* ent
 
 	//transform the input point in the 'global world' by default
 	if (shifted)
-		Pin = m_alignedPoints.toGlobal3d<double>(Pin);
+		Pin = m_alignedPoints.toOriginalCoordinatesd<double>(Pin);
 
 	//check that we don't duplicate points
 	for (unsigned i = 0; i < m_alignedPoints.size(); ++i)
 	{
-		CCVector3d Pi = m_alignedPoints.toGlobal3d<PointCoordinateType>(*m_alignedPoints.getPoint(i));
+		CCVector3d Pi = m_alignedPoints.toOriginalCoordinatesd<PointCoordinateType>(*m_alignedPoints.getPoint(i));
 		if ((Pi-Pin).norm() < ZERO_TOLERANCE)
 		{
 			ccLog::Error("Point already picked or too close to an already selected one!");
@@ -679,7 +679,7 @@ bool ccPointPairRegistrationDlg::addAlignedPoint(CCVector3d& Pin, ccHObject* ent
 	}
 
 	//shift point to the local coordinate system before pushing it
-	CCVector3 P = m_alignedPoints.toLocal3pc<double>(Pin);
+	CCVector3 P = m_alignedPoints.toShiftedCoordinatespc<double>(Pin);
 	m_alignedPoints.addPoint(P);
 	
 	QString pointName = QString("A%1").arg(newPointIndex);
@@ -781,8 +781,8 @@ void ccPointPairRegistrationDlg::removeAlignedPoint(int index, bool autoRemoveDu
 	if (m_alignedPoints.size() == 0)
 	{
 		//reset global shift (if any)
-		m_alignedPoints.setGlobalShift(0, 0, 0);
-		m_alignedPoints.setGlobalScale(1.0);
+		m_alignedPoints.setCoordinatesShift(0, 0, 0);
+		m_alignedPoints.setCoordinatesScaleMultiplier(1.0);
 	}
 
 	if (m_associatedWin)
@@ -815,14 +815,14 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 			//simply copy the cloud global shift/scale
 			if (cloud)
 			{
-				m_refPoints.setGlobalScale(cloud->getGlobalScale());
-				m_refPoints.setGlobalShift(cloud->getGlobalShift());
+				m_refPoints.setCoordinatesScaleMultiplier(cloud->getCoordinatesScaleMultiplier());
+				m_refPoints.setCoordinatesShift(cloud->getCoordinatesShift());
 			}
 		}
 		else //virtual point
 		{
-			m_refPoints.setGlobalScale(1.0);
-			m_refPoints.setGlobalShift(0, 0, 0);
+			m_refPoints.setCoordinatesScaleMultiplier(1.0);
+			m_refPoints.setCoordinatesShift(0, 0, 0);
 
 			if (!shifted)
 			{
@@ -834,14 +834,14 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 				ccGenericPointCloud* alignedCloud = m_aligned.entity ? ccHObjectCaster::ToGenericPointCloud(m_aligned.entity) : 0;
 				if (alignedCloud && alignedCloud->isShifted())
 				{
-					Pshift = alignedCloud->getGlobalShift();
-					scale = alignedCloud->getGlobalScale();
+					Pshift = alignedCloud->getCoordinatesShift();
+					scale = alignedCloud->getCoordinatesScaleMultiplier();
 					shiftEnabled = true;
 				}
 				if (ccGlobalShiftManager::Handle(Pin, 0, ccGlobalShiftManager::DIALOG_IF_NECESSARY, shiftEnabled, Pshift, &scale))
 				{
-					m_refPoints.setGlobalShift(Pshift);
-					m_refPoints.setGlobalScale(scale);
+					m_refPoints.setCoordinatesShift(Pshift);
+					m_refPoints.setCoordinatesScaleMultiplier(scale);
 				}
 			}
 		}
@@ -854,14 +854,14 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 	//transform the input point in the 'global world' by default
 	if (shifted && cloud)
 	{
-		Pin = cloud->toGlobal3d<double>(Pin);
+		Pin = cloud->toOriginalCoordinatesd<double>(Pin);
 	}
 
 	//check that we don't duplicate points
 	for (unsigned i = 0; i < m_refPoints.size(); ++i)
 	{
 		//express the 'Pi' point in the current global coordinate system
-		CCVector3d Pi = m_refPoints.toGlobal3d<PointCoordinateType>(*m_refPoints.getPoint(i));
+		CCVector3d Pi = m_refPoints.toOriginalCoordinatesd<PointCoordinateType>(*m_refPoints.getPoint(i));
 		if ((Pi - Pin).norm() < ZERO_TOLERANCE)
 		{
 			ccLog::Error("Point already picked or too close to an already selected one!");
@@ -878,7 +878,7 @@ bool ccPointPairRegistrationDlg::addReferencePoint(CCVector3d& Pin, ccHObject* e
 	}
 	
 	//shift point to the local coordinate system before pushing it
-	CCVector3 P = m_refPoints.toLocal3pc<double>(Pin);
+	CCVector3 P = m_refPoints.toShiftedCoordinatespc<double>(Pin);
 	m_refPoints.addPoint(P);
 
 	QString pointName = QString("R%1").arg(newPointIndex);
@@ -931,8 +931,8 @@ void ccPointPairRegistrationDlg::unstackRef()
 	if (pointCount == 0)
 	{
 		//reset global shift (if any)
-		m_refPoints.setGlobalShift(0, 0, 0);
-		m_refPoints.setGlobalScale(1.0);
+		m_refPoints.setCoordinatesShift(0, 0, 0);
+		m_refPoints.setCoordinatesScaleMultiplier(1.0);
 	}
 
 	if (m_associatedWin)
@@ -990,8 +990,8 @@ void ccPointPairRegistrationDlg::removeRefPoint(int index, bool autoRemoveDualPo
 	if (m_refPoints.size() == 0)
 	{
 		//reset global shift (if any)
-		m_refPoints.setGlobalShift(0, 0, 0);
-		m_refPoints.setGlobalScale(1.0);
+		m_refPoints.setCoordinatesShift(0, 0, 0);
+		m_refPoints.setCoordinatesScaleMultiplier(1.0);
 	}
 
 	if (m_associatedWin)
@@ -1333,18 +1333,18 @@ void ccPointPairRegistrationDlg::apply()
 		{
 			if (m_refPoints.isShifted())
 			{
-				const CCVector3d& Pshift = m_refPoints.getGlobalShift();
-				const double& scale = m_refPoints.getGlobalScale();
-				cloud->setGlobalShift(Pshift);
-				cloud->setGlobalScale(scale);
+				const CCVector3d& Pshift = m_refPoints.getCoordinatesShift();
+				const double& scale = m_refPoints.getCoordinatesScaleMultiplier();
+				cloud->setCoordinatesShift(Pshift);
+				cloud->setCoordinatesScaleMultiplier(scale);
 				ccLog::Warning(QString("[PointPairRegistration] Aligned entity global shift has been updated to match the reference: (%1,%2,%3) [x%4]").arg(Pshift.x).arg(Pshift.y).arg(Pshift.z).arg(scale));
 			}
 			else if (cloud->isShifted()) //we'll ask the user first before dropping the shift information on the aligned cloud
 			{
 				if (QMessageBox::question(this, "Drop shift information?", "Aligned cloud is shifted but reference cloud is not: drop global shift information?", QMessageBox::Yes, QMessageBox::No) == QMessageBox::Yes)
 				{
-					cloud->setGlobalShift(0,0,0);
-					cloud->setGlobalScale(1.0);
+					cloud->setCoordinatesShift(0,0,0);
+					cloud->setCoordinatesScaleMultiplier(1.0);
 					ccLog::Warning(QString("[PointPairRegistration] Aligned cloud global shift has been reset to match the reference!"));
 				}
 			}

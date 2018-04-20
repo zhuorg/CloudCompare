@@ -235,17 +235,17 @@ CC_FILE_ERROR STLFilter::saveToASCIIFile(ccGenericMesh* mesh, FILE *theFile, QWi
 		if (fprintf(theFile, "outer loop\n") < 0)
 			return CC_FERR_WRITING;
 
-		CCVector3d Aglobal = vertices->toGlobal3d<PointCoordinateType>(*A);
+		CCVector3d Aglobal = vertices->toOriginalCoordinatesd<PointCoordinateType>(*A);
 		if (fprintf(theFile, "vertex %e %e %e\n", Aglobal.x,
 			Aglobal.y,
 			Aglobal.z) < 0)
 			return CC_FERR_WRITING;
-		CCVector3d Bglobal = vertices->toGlobal3d<PointCoordinateType>(*B);
+		CCVector3d Bglobal = vertices->toOriginalCoordinatesd<PointCoordinateType>(*B);
 		if (fprintf(theFile, "vertex %e %e %e\n", Bglobal.x,
 			Bglobal.y,
 			Bglobal.z) < 0)
 			return CC_FERR_WRITING;
-		CCVector3d Cglobal = vertices->toGlobal3d<PointCoordinateType>(*C);
+		CCVector3d Cglobal = vertices->toOriginalCoordinatesd<PointCoordinateType>(*C);
 		if (fprintf(theFile, "vertex %e %e %e\n", Cglobal.x,
 			Cglobal.y,
 			Cglobal.z) < 0)
@@ -758,7 +758,7 @@ CC_FILE_ERROR STLFilter::loadASCIIFile(QFile& fp,
 			{
 				if (HandleGlobalShift(Pd, Pshift, parameters))
 				{
-					vertices->setGlobalShift(Pshift);
+					vertices->setCoordinatesShift(Pshift);
 					ccLog::Warning("[STLFilter::loadFile] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)", Pshift.x, Pshift.y, Pshift.z);
 				}
 			}
@@ -969,7 +969,7 @@ CC_FILE_ERROR STLFilter::loadBinaryFile(QFile& fp,
 			{
 				if (HandleGlobalShift(Pd, Pshift, parameters))
 				{
-					vertices->setGlobalShift(Pshift);
+					vertices->setCoordinatesShift(Pshift);
 					ccLog::Warning("[STLFilter::loadFile] Cloud has been recentered! Translation: (%.2f ; %.2f ; %.2f)", Pshift.x, Pshift.y, Pshift.z);
 				}
 			}

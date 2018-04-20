@@ -560,8 +560,8 @@ ccPointCloud* ccRasterizeTool::convertGridToCloud(	const std::vector<ccRasterGri
 		cloudGrid->showColors(interpolateColors);
 
 		//don't forget the original shift
-		cloudGrid->setGlobalShift(m_cloud->getGlobalShift());
-		cloudGrid->setGlobalScale(m_cloud->getGlobalScale());
+		cloudGrid->setCoordinatesShift(m_cloud->getCoordinatesShift());
+		cloudGrid->setCoordinatesScaleMultiplier(m_cloud->getCoordinatesScaleMultiplier());
 	}
 
 	return cloudGrid;
@@ -1637,8 +1637,8 @@ void ccRasterizeTool::addNewContour(ccPolyline* poly, double height, unsigned su
 	if (poly->size() > 1)
 	{
 		poly->setName(QString("Contour line value = %1 (#%2)").arg(height).arg(subIndex));
-		poly->setGlobalScale(m_cloud->getGlobalScale());
-		poly->setGlobalShift(m_cloud->getGlobalShift());
+		poly->setCoordinatesScaleMultiplier(m_cloud->getCoordinatesScaleMultiplier());
+		poly->setCoordinatesShift(m_cloud->getCoordinatesShift());
 		poly->setWidth(contourWidthSpinBox->value() < 2 ? 0 : contourWidthSpinBox->value()); //size 1 is equivalent to the default size
 		poly->setColor(ccColor::darkGrey);
 		//poly->setClosed(isClosed);
