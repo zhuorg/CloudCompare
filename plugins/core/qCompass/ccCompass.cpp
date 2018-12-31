@@ -30,7 +30,7 @@
 #include <ccProgressDialog.h>
 #include <qcombobox.h>
 
-
+#include "ccBox.h"
 #include "ccCompass.h"
 #include "ccCompassDlg.h"
 #include "ccCompassInfo.h"
@@ -44,7 +44,6 @@
 #include "ccThicknessTool.h"
 #include "ccTopologyTool.h"
 #include "ccTraceTool.h"
-#include "ccBox.h"
 
 //initialize default static pars
 bool ccCompass::drawName = false;
@@ -1386,10 +1385,15 @@ void ccCompass::estimateStructureNormals()
 	m_app->dispToConsole("[ccCompass] Estimating structure normals. This may take a while...", ccMainAppInterface::STD_CONSOLE_MESSAGE);
 
 	//declare some variables used in the loops
-	double d, cx, cy, cz;
-	int iid;
-	CCLib::SquareMatrixd eigVectors; std::vector<double> eigValues;
-	bool hasNormals = true, broken = false; //assume normals exist until check later on
+	double d = 0.0;
+	double cx = 0.0;
+	double cy = 0.0;
+	double cz = 0.0;
+	int iid = 0;
+	CCLib::SquareMatrixd eigVectors;
+	std::vector<double> eigValues;
+	bool hasNormals = true;
+	bool broken = false; //assume normals exist until check later on
 
 	//setup progress dialog
 	ccProgressDialog prg(true, m_app->getMainWindow());
@@ -1477,7 +1481,7 @@ void ccCompass::estimateStructureNormals()
 	for (int _d = 0; _d < datasets.size(); _d++)
 	{
 		//update progress dialog
-		prg.setInfo(QString::asprintf("Processing %d of %d datasets: Calculating fit planes...", _d+1, datasets.size()));
+		prg.setInfo(QStringLiteral("Processing %1 of %2 datasets: Calculating fit planes...").arg( _d+1 ).arg( datasets.size() ));
 		prg.update(0.0f);
 		if (prg.isCancelRequested()) {
 			break;
@@ -1647,7 +1651,7 @@ void ccCompass::estimateStructureNormals()
 			for (unsigned _min = 0; _min < px.size() - minsize; _min++)
 			{
 				//update progress bar
-				prg.update(100 * _min / (float)(px.size() - minsize));
+				prg.update(100 * _min / static_cast<float>(px.size() - minsize));
 
 				if (prg.isCancelRequested()) {
 
@@ -1895,8 +1899,8 @@ void ccCompass::estimateStructureNormals()
 				for (unsigned p = 0; p < px.size(); p++) 
 				{
 					//update progress dialog
-					prg.setInfo(QString::asprintf("Processing %d of %d datasets: Sampling points...", _d + 1, datasets.size()));
-					prg.update(100.0f * p / (float)px.size());
+					prg.setInfo(QStringLiteral("Processing %1 of %2 datasets: Sampling points...").arg( _d + 1 ).arg( datasets.size() ));
+					prg.update(100.0f * p / static_cast<float>(px.size()));
 					if (prg.isCancelRequested()) {
 						//cleanup
 						delete points[r];
@@ -2024,7 +2028,7 @@ void ccCompass::estimateStructureNormals()
 		if (regions[0] != nullptr && regions[1] != nullptr && calcThickness) //have both surfaces been defined?
 		{
 			if (points[0]->size() > 0 && points[1]->size() > 0) { //do both surfaces have points in them?
-				prg.setInfo(QString::asprintf("Processing %d of %d datasets: Estimating thickness...", _d + 1, datasets.size()));
+				prg.setInfo(QStringLiteral("Processing %1 of %2 datasets: Estimating thickness...").arg( _d + 1 ).arg( datasets.size() ));
 				for (int r = 0; r < 2; r++)
 				{
 					//make scalar field
@@ -2060,7 +2064,7 @@ void ccCompass::estimateStructureNormals()
 					
 					CCLib::DgmOctree::NeighboursSet neighbours;
 					d = -1.0;
-					unsigned pointIDIdx = points[r]->getScalarFieldIndexByName("PointID");
+
 					//loop through points in this surface
 					for (unsigned p = 0; p < points[r]->size(); p++)
 					{
@@ -2205,7 +2209,7 @@ void ccCompass::estimateStrain()
 	float miny = std::numeric_limits<float>::max(), maxy = std::numeric_limits<float>::lowest();
 	float minz = std::numeric_limits<float>::max(), maxz = std::numeric_limits<float>::lowest();
 
-	if (lines.size() == 0)
+	if (lines.empty())
 	{
 		m_app->dispToConsole("[ccCompass] Error - no traces or SNEs found to compute estimate strain with.", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
@@ -2324,7 +2328,12 @@ void ccCompass::estimateStrain()
 				else
 				{
 					//n.b. this *should* never happen!
-					m_app->dispToConsole(QString::asprintf("[ccCompass] Error: cell %d is outside of mesh bounds (with total size = %d [%d,%d,%d]).", idx, geoObjectBins.size(), nx, ny, nz),ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+					const QString message = QStringLiteral( "[ccCompass] Error: cell %1 is outside of mesh bounds (with total size = %2 [%3,%4,%5])." )
+											.arg( idx )
+											.arg( geoObjectBins.size() )
+											.arg( nx ).arg( ny ).arg( nz );
+					
+					m_app->dispToConsole( message, ccMainAppInterface::ERR_CONSOLE_MESSAGE );
 					return;
 				}
 			}
@@ -2339,7 +2348,7 @@ void ccCompass::estimateStrain()
 	std::vector<ccPointCloud*> dataInCell(nx*ny*nz, nullptr);
 	
 	//init object to store blocks in
-	ccHObject* blocks;
+	ccHObject* blocks = nullptr;
 	if (buildGraphics)
 	{
 		blocks = new ccHObject("Blocks");
@@ -2361,6 +2370,7 @@ void ccCompass::estimateStrain()
 				prg.update(100.0 * idx / float(nx*ny*nz));
 				if (prg.isCancelRequested())
 				{
+					delete blocks;
 					return;
 				}
 
@@ -2544,8 +2554,8 @@ void ccCompass::estimateStrain()
 		}
 	}
 
-	ccHObject* ellipses;
-	ccHObject* grid;
+	ccHObject* ellipses = nullptr;
+	ccHObject* grid = nullptr;
 	if (buildGraphics)
 	{
 		ellipses = new ccHObject("Ellipses");
@@ -2724,7 +2734,7 @@ void ccCompass::estimateP21()
 		}
 	}
 
-	if (lines.size() == 0)
+	if (lines.empty())
 	{
 		m_app->dispToConsole("[ccCompass] Error - no polylines or traces found to compute P21.", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
@@ -2842,13 +2852,10 @@ void ccCompass::estimateP21()
 	prg.update(0.0);
 
 	//loop through points in the output cloud
-	float approxArea = M_PI * searchR * searchR;
-	int n_trace;
 	for (unsigned p = 0; p < outputCloud->size(); p++)
 	{
-
 		//keep progress bar up to date
-		prg.update(100.0 * p / (float) outputCloud->size());
+		prg.update(100.0 * p / static_cast<float>(outputCloud->size()));
 		if (prg.isCancelRequested())
 		{
 			//cleanup
@@ -2858,7 +2865,7 @@ void ccCompass::estimateP21()
 
 		//get number of structure points in this neighbourhood
 		region.clear();
-		n_trace = trace_oct->getPointsInSphericalNeighbourhood(*outputCloud->getPoint(p), searchR, region, trace_level);
+		trace_oct->getPointsInSphericalNeighbourhood(*outputCloud->getPoint(p), searchR, region, trace_level);
 
 		//calculate total weight (think length) of structure points by summing weights
 		float sum = 0;
@@ -2874,8 +2881,7 @@ void ccCompass::estimateP21()
 	//loop through points in output cloud again, but this time calculate surface area in regions where n_trace wasn't zero
 	prg.setInfo("Calculating patch areas...");
 	ccOctree::Shared outcrop_oct = outputCloud->computeOctree();
-	unsigned char outcrop_level = outcrop_oct->findBestLevelForAGivenNeighbourhoodSizeExtraction(searchR);
-	int n_outcrop;
+	int n_outcrop = 0;
 	for (unsigned p = 0; p < outputCloud->size(); p++)
 	{
 		float sum = P21->getValue(p);
@@ -2883,7 +2889,7 @@ void ccCompass::estimateP21()
 		{
 
 			//keep progress bar up to date
-			prg.update(100.0 * p / (float)outputCloud->size());
+			prg.update(100.0 * p / static_cast<float>(outputCloud->size()));
 			if (prg.isCancelRequested())
 			{
 				//cleanup
@@ -3055,7 +3061,7 @@ void ccCompass::distributeSelection()
 
 	//get selection
 	ccHObject::Container selection = m_app->getSelectedEntities();
-	if (selection.size() == 0)
+	if (selection.empty())
 	{
 		m_app->dispToConsole("[Compass] No objects selected.", ccMainAppInterface::WRN_CONSOLE_MESSAGE);
 	}
@@ -3373,7 +3379,7 @@ void ccCompass::importFoliations()
 {
 	//get selected point cloud
 	std::vector<ccHObject*> sel = m_app->getSelectedEntities();
-	if (sel.size() == 0)
+	if (sel.empty())
 	{
 		m_app->dispToConsole("Please select a point cloud containing your field data (this can be loaded from a text file)",ccMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
@@ -3506,7 +3512,7 @@ void ccCompass::importLineations()
 {
 	//get selected point cloud
 	std::vector<ccHObject*> sel = m_app->getSelectedEntities();
-	if (sel.size() == 0)
+	if (sel.empty())
 	{
 		m_app->dispToConsole("Please select a point cloud containing your field data (this can be loaded from a text file)", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
 		return;
@@ -3593,7 +3599,7 @@ void ccCompass::importLineations()
 		lineation->addPointIndex(0);
 		lineation->addPointIndex(1);
 		lineation->updateMetadata();
-		lineation->setName(QString::asprintf("%d->%d", (int) plunge, (int) trend));
+		lineation->setName(QStringLiteral("%1->%2").arg( qRound( plunge ) ).arg( qRound( trend ) ));
 		cld->addChild(lineation);
 		m_app->addToDB(lineation, false, true, false, false);
 	}
@@ -3602,7 +3608,7 @@ void ccCompass::importLineations()
 //save the current view to an SVG file
 void ccCompass::exportToSVG()
 {
-	float zoom = 2.0; //TODO: create popup box
+	float zoom = 2.0f; //TODO: create popup box
 
 	//get filename for the svg file
 	QString filename = QFileDialog::getSaveFileName(m_dlg, tr("SVG Output file"), "", tr("SVG files (*.svg)"));

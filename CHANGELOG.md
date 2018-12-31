@@ -9,7 +9,26 @@ v2.10.alpha - XX/XX/201X
 	* Edit > Polyline > Sample points
 		- to regularly samples points on one or several polylines
 
+	* New set of geometrical features to compute on clouds:
+		- Tools > Other > Compute geometric features
+		- features are all based on locally computed eigen values:
+			* sum of eigen values
+			* omnivariance
+			* eigenentropy
+			* anisotropy
+			* planarity
+			* linearity
+			* PCA1
+			* PCA2
+			* surface variation
+			* sphericity
+			* verticality
+		- most of the features are defined in "Contour detection in unstructured 3D point clouds", Hackel et al, 2016
+
 - enhancements:
+
+	* Roughness, Density and Curvature can now all be computed via the new 'Tools > Other > Compute geometric features' menu
+		(Approx density can't be computed anymore)
 
 	* Global Shift & Scale dialog
 		- new option "Preserve global shift on save" to directly control whether the global coordinates should be preserved
@@ -25,6 +44,7 @@ v2.10.alpha - XX/XX/201X
 		- optionally load a 3rd cloud that will be used as core points
 		- and eventually call the -M3C2 option with the parameter file as argument:
 			CloudCompare -O cloud1 -O cloud2 (-O core_points) -M3C2 parameters_file
+		- new option to use the core points cloud normals (if any)
 
 	* The "Classify" option of the Canupo plugin can now be called from the command line:
 		- you'll need a trained classifier (.prm file)
@@ -57,6 +77,23 @@ v2.10.alpha - XX/XX/201X
 		- Remove all scan grids
 			* '-REMOVE_SCAN_GRIDS'
 		- New sub-option of 'SAVE_CLOUDS' to set the output filename(s) (e.g. -SAVE_CLOUDS FILE "cloud1.bin cloud2.bin ..."
+		- New options for the 'OCTREE_NORMALS' (thanks to Michael Barnes):
+			* '-ORIENT' to specify a default orientation hint:
+				- PLUS_ZERO
+				- MINUS_ZERO
+				- PLUS_BARYCENTER
+				- MINUS_BARYCENTER
+				- PLUS_X
+				- MINUS_X
+				- PLUS_Y
+				- MINUS_Y
+				- PLUS_Z
+				- MINUS_Z
+				- PREVIOUS
+			* '-MODEL' to specify the local model;
+				- LS
+				- TRI
+				- QUADRIC
 
 	* Unroll tool:
 		- the cylindrical unrolling can be performed inside an arbitrary angular range (between -3600 and +3600 degrees)
@@ -136,6 +173,8 @@ v2.10.alpha - XX/XX/201X
 	* In some cases, merging a mesh with materials with a mesh without could make CC crash
 	* Command line mode: the VOLUME command parser would loop indefinitely if other commands were appended after its own options + it was ignoring the AUTO_SAVE state.
 	* Bug fix: some files saved with version 2.6 to 2.9 and containing quadric primitives or projective camera sensors could not be loaded properly since the version 2.10.alpha of May 2018
+	* For a mysterious reason, the FWF_SAVE_CLOUDS command was not accessible anymore...
+	* when computing C2C distances, and using both a 2.5D Triangulation local model and the 'split distances along X, Y and Z' option, the split distances could be wrong in some times
 
 v2.9.1 - 11/03/2017
 ----------------------

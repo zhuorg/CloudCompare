@@ -596,6 +596,7 @@ public:
 		\param level the subdivision level of the octree at which to perform the search
 		\param maxSquareDist the square distance between the farthest "nearest neighbour" and the query point
 		\param maxSearchDist the maximum search distance (ignored if <= 0)
+		\param[out] the final neighborhood (half)size (optional)
 		\return the number of neighbours found
 	**/
 	unsigned findPointNeighbourhood(const CCVector3* _queryPoint,
@@ -603,7 +604,8 @@ public:
 									unsigned maxNumberOfNeighbors,
 									unsigned char level,
 									double &maxSquareDist,
-									double maxSearchDist = 0) const;
+									double maxSearchDist = 0,
+									int* finalNeighbourhoodSize = nullptr) const;
 
 	//! Advanced form of the nearest neighbour search algorithm (unique neighbour)
 	/** This version is optimized for a unique nearest-neighbour search.
@@ -999,12 +1001,12 @@ public:	/***** CELLS POSITION HANDLING *****/
 	**/
 	static inline PointCoordinateType ComputeMinDistanceToCellBorder(const CCVector3& queryPoint, PointCoordinateType cs, const CCVector3& cellCenter)
 	{
-		PointCoordinateType d1 = fabs(cellCenter.x - queryPoint.x);
-		PointCoordinateType d2 = fabs(cellCenter.y - queryPoint.y);
+		PointCoordinateType d1 = std::abs(cellCenter.x - queryPoint.x);
+		PointCoordinateType d2 = std::abs(cellCenter.y - queryPoint.y);
 		if (d2 > d1)
 			d1 = d2;
 		
-		d2 = fabs(cellCenter.z - queryPoint.z);
+		d2 = std::abs(cellCenter.z - queryPoint.z);
 		return cs/2 - (d2 > d1 ? d2 : d1);
 	}
 
@@ -1163,6 +1165,9 @@ protected:
 
 	//! Number of points projected in the octree
 	unsigned m_numberOfProjectedPoints;
+	
+	//! Nearest power of 2 less than the number of points (used for binary search)
+	unsigned m_nearestPow2;
 
 	//! Min coordinates of the octree bounding-box
 	CCVector3 m_dimMin;

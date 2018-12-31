@@ -117,11 +117,11 @@ void ccGenericPointCloud::deleteOctree()
 
 ccOctreeProxy* ccGenericPointCloud::getOctreeProxy() const
 {
-	for (size_t i = 0; i < m_children.size(); ++i)
+	for (auto child : m_children)
 	{
-		if (m_children[i]->isA(CC_TYPES::POINT_OCTREE))
+		if (child->isA(CC_TYPES::POINT_OCTREE))
 		{
-			return static_cast<ccOctreeProxy*>(m_children[i]);
+			return static_cast<ccOctreeProxy*>(child);
 		}
 	}
 
@@ -305,7 +305,7 @@ bool ccGenericPointCloud::pointPicking(	const CCVector2d& clickPos,
 		ccOctree::Shared octree = getOctree();
 		if (!octree && autoComputeOctree)
 		{
-			ccProgressDialog pDlg(false, getDisplay() ? getDisplay()->asWidget() : 0);
+			ccProgressDialog pDlg(false, getDisplay() ? getDisplay()->asWidget() : nullptr);
 			octree = computeOctree(&pDlg);
 		}
 

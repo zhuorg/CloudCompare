@@ -105,7 +105,7 @@ static const char c_ps_stereoGlassType[] = "stereoGlassType";
 static int s_GlWindowNumber = 0;
 
 // Shader path
-QString	ccGLWindow::s_shaderPath;
+Q_GLOBAL_STATIC( QString, s_shaderPath );
 
 //On some versions of Qt, QGLWidget::renderText seems to need glColorf instead of glColorub!
 // See https://bugreports.qt-project.org/browse/QTBUG-6217
@@ -806,7 +806,9 @@ bool ccGLWindow::initialize()
 				{
 					ccColorRampShader* colorRampShader = new ccColorRampShader();
 					QString error;
-					if (!colorRampShader->loadProgram(QString(), s_shaderPath + QString("/ColorRamp/color_ramp.frag"), error))
+					const QString shaderPath = QStringLiteral( "%1/ColorRamp/color_ramp.frag" ).arg( *s_shaderPath );
+					
+					if (!colorRampShader->loadProgram(QString(), shaderPath, error))
 					{
 						if (!m_silentInitialization)
 							ccLog::Warning(QString("[3D View %1] Failed to load color ramp shader: '%2'").arg(m_uniqueID).arg(error));
@@ -1559,7 +1561,11 @@ void ccGLWindow::paintGL()
 
 	m_shouldBeRefreshed = false;
 
-	if (!m_stereoModeEnabled && m_autoPickPivotAtCenter && !m_mouseMoved && m_autoPivotCandidate.norm2d() != 0.0)
+	if (	!m_stereoModeEnabled
+		&&	m_autoPickPivotAtCenter
+		&&	!m_mouseMoved
+		&&	m_autoPivotCandidate.norm2d() != 0.0
+		&&	!renderingParams.nextLODState.inProgress)
 	{
 		setPivotPoint(m_autoPivotCandidate, true, false);
 	}
@@ -1606,7 +1612,7 @@ void ccGLWindow::paintGL()
 			{
 				qint64 displayTime_ms = m_timer.elapsed() - startTime_ms;
 				//we try to refresh LOD levels at a regular pace
-				qint64 baseLODRefreshTime_ms = 50;
+				static const qint64 baseLODRefreshTime_ms = 50;
 
 				m_LODPendingRefresh = true;
 				m_LODPendingIgnore = false;
@@ -1629,7 +1635,7 @@ void ccGLWindow::renderNextLODLevel()
 	m_LODPendingRefresh = false;
 	if (m_currentLODState.inProgress && m_currentLODState.level != 0 && !m_LODPendingIgnore)
 	{
-		ccLog::PrintDebug(QString("[renderNextLODLevel] Confirmed"));
+		ccLog::PrintDebug(QString("[renderNextLODLevel] Level %1 - index %2 confirmed").arg(m_currentLODState.level).arg(m_currentLODState.startIndex));
 		QApplication::processEvents();
 		requestUpdate();
 	}
@@ -2488,20 +2494,20 @@ void ccGLWindow::drawForeground(CC_DRAW_CONTEXT& CONTEXT, RenderingParams& rende
 				int ll_currentHeight = m_glViewport.height() - 10; //lower left
 				int uc_currentHeight = 10; //upper center
 
-				for (std::list<MessageToDisplay>::iterator it = m_messagesToDisplay.begin(); it != m_messagesToDisplay.end(); ++it)
+				for (const auto &message : m_messagesToDisplay)
 				{
-					switch (it->position)
+					switch (message.position)
 					{
 					case LOWER_LEFT_MESSAGE:
 					{
-						renderText(10, ll_currentHeight, it->message, m_font);
+						renderText(10, ll_currentHeight, message.message, m_font);
 						int messageHeight = QFontMetrics(m_font).height();
 						ll_currentHeight -= (messageHeight * 5) / 4; //add a 25% margin
 					}
 					break;
 					case UPPER_CENTER_MESSAGE:
 					{
-						QRect rect = QFontMetrics(m_font).boundingRect(it->message);
+						QRect rect = QFontMetrics(m_font).boundingRect(message.message);
 						//take the GL filter banner into account!
 						int x = (m_glViewport.width() - rect.width()) / 2;
 						int y = uc_currentHeight + rect.height();
@@ -2509,7 +2515,7 @@ void ccGLWindow::drawForeground(CC_DRAW_CONTEXT& CONTEXT, RenderingParams& rende
 						{
 							y += getGlFilterBannerHeight();
 						}
-						renderText(x, y, it->message, m_font);
+						renderText(x, y, message.message, m_font);
 						uc_currentHeight += (rect.height() * 5) / 4; //add a 25% margin
 					}
 					break;
@@ -2517,9 +2523,9 @@ void ccGLWindow::drawForeground(CC_DRAW_CONTEXT& CONTEXT, RenderingParams& rende
 					{
 						QFont newFont(m_font); //no need to take zoom into account!
 						newFont.setPointSize(12 * devicePixelRatio());
-						QRect rect = QFontMetrics(newFont).boundingRect(it->message);
+						QRect rect = QFontMetrics(newFont).boundingRect(message.message);
 						//only one message supported in the screen center (for the moment ;)
-						renderText((m_glViewport.width() - rect.width()) / 2, (m_glViewport.height() - rect.height()) / 2, it->message, newFont);
+						renderText((m_glViewport.width() - rect.width()) / 2, (m_glViewport.height() - rect.height()) / 2, message.message, newFont);
 					}
 					break;
 					}
@@ -3625,11 +3631,11 @@ void ccGLWindow::updateActiveItemsList(int x, int y, bool extendToSelectedLabels
 				if (m_winDBRoot)
 					m_winDBRoot->filterChildren(labels, true, CC_TYPES::LABEL_2D);
 
-				for (ccHObject::Container::iterator it = labels.begin(); it != labels.end(); ++it)
+				for (auto & label : labels)
 				{
-					if ((*it)->isA(CC_TYPES::LABEL_2D) && (*it)->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CC_TYPES::LABEL_2D'!
+					if (label->isA(CC_TYPES::LABEL_2D) && label->isVisible()) //Warning: cc2DViewportLabel is also a kind of 'CC_TYPES::LABEL_2D'!
 					{
-						cc2DLabel* l = static_cast<cc2DLabel*>(*it);
+						cc2DLabel* l = static_cast<cc2DLabel*>(label);
 						if (l != label && l->isSelected())
 						{
 							m_activeItems.push_back(l);
@@ -3869,13 +3875,13 @@ void ccGLWindow::mouseMoveEvent(QMouseEvent *event)
 			const int retinaScale = devicePixelRatio();
 			u *= retinaScale;
 
-			for (std::list<ccInteractor*>::iterator it = m_activeItems.begin(); it != m_activeItems.end(); ++it)
+			for (auto &activeItem : m_activeItems)
 			{
-				if ((*it)->move2D(x * retinaScale, y * retinaScale, dx * retinaScale, dy * retinaScale, glWidth(), glHeight()))
+				if (activeItem->move2D(x * retinaScale, y * retinaScale, dx * retinaScale, dy * retinaScale, glWidth(), glHeight()))
 				{
 					invalidateViewport();
 				}
-				else if ((*it)->move3D(u))
+				else if (activeItem->move3D(u))
 				{
 					invalidateViewport();
 					deprecate3DLayer();
@@ -4498,7 +4504,7 @@ void ccGLWindow::startPicking(PickingParameters& params)
 	if (!m_globalDBRoot && !m_winDBRoot)
 	{
 		//we must always emit a signal!
-		processPickingResult(params, 0, -1);
+		processPickingResult(params, nullptr, -1);
 		return;
 	}
 
@@ -4624,7 +4630,7 @@ void ccGLWindow::startOpenGLPicking(const PickingParameters& params)
 		//unhandled mode?!
 		assert(false);
 		//we must always emit a signal!
-		processPickingResult(params, 0, -1);
+		processPickingResult(params, nullptr, -1);
 		return;
 	}
 
@@ -4746,7 +4752,7 @@ void ccGLWindow::startOpenGLPicking(const PickingParameters& params)
 	{
 		ccLog::Warning("[Picking] Too many items inside the picking area! Try to zoom in...");
 		//we must always emit a signal!
-		processPickingResult(params, 0, -1);
+		processPickingResult(params, nullptr, -1);
 	}
 
 	//process hits
@@ -5842,7 +5848,7 @@ bool ccGLWindow::renderToFile(	QString filename,
 
 void ccGLWindow::setShaderPath( const QString &path )
 {
-	s_shaderPath = path;
+	(*s_shaderPath) = path;
 }
 
 QImage ccGLWindow::renderToImage(	float zoomFactor/*=1.0f*/,
@@ -5970,7 +5976,7 @@ QImage ccGLWindow::renderToImage(	float zoomFactor/*=1.0f*/,
 		if (m_activeGLFilter)
 		{
 			QString error;
-			if (!m_activeGLFilter->init(m_glViewport.width(), m_glViewport.height(), s_shaderPath, error))
+			if (!m_activeGLFilter->init(m_glViewport.width(), m_glViewport.height(), *s_shaderPath, error))
 			{
 				if (!silent)
 				{
@@ -6117,7 +6123,7 @@ QImage ccGLWindow::renderToImage(	float zoomFactor/*=1.0f*/,
 	if (glFilter && zoomFactor != 1.0f)
 	{
 		QString error;
-		m_activeGLFilter->init(m_glViewport.width(), m_glViewport.height(), s_shaderPath, error);
+		m_activeGLFilter->init(m_glViewport.width(), m_glViewport.height(), *s_shaderPath, error);
 	}
 
 	//we restore viewport parameters
@@ -6207,7 +6213,7 @@ bool ccGLWindow::initGLFilter(int w, int h, bool silent/*=false*/)
 	std::swap(_filter, m_activeGLFilter);
 
 	QString error;
-	if (!_filter->init(static_cast<unsigned>(w), static_cast<unsigned>(h), s_shaderPath, error))
+	if (!_filter->init(static_cast<unsigned>(w), static_cast<unsigned>(h), *s_shaderPath, error))
 	{
 		if (!silent)
 		{

@@ -52,7 +52,7 @@ public:
 			*nearestPoint = *P - dist * CCVector3(m_eq);
 		}
 
-		return fabs(dist);
+		return std::abs(dist);
 	}
 
 protected:
@@ -88,14 +88,17 @@ public:
 		{
 			m_tri->placeIteratorAtBeginning();
 			unsigned numberOfTriangles = m_tri->size();
-			for (unsigned i=0; i<numberOfTriangles; ++i)
+			CCVector3 triNearestPoint;
+			for (unsigned i = 0; i < numberOfTriangles; ++i)
 			{
 				GenericTriangle* tri = m_tri->_getNextTriangle();
-				ScalarType dist2 = DistanceComputationTools::computePoint2TriangleDistance(P, tri, false, nearestPoint);
+				ScalarType dist2 = DistanceComputationTools::computePoint2TriangleDistance(P, tri, false, nearestPoint ? &triNearestPoint : nullptr);
 				if (dist2 < minDist2 || i == 0)
 				{
 					//keep track of the smallest distance
 					minDist2 = dist2;
+					if (nearestPoint)
+						*nearestPoint = triNearestPoint;
 				}
 			}
 		}
@@ -145,7 +148,7 @@ public:
 		CCVector3 P = *_P - m_gravityCenter;
 
 		//height = h0 + h1.x + h2.y + h3.x^2 + h4.x.y + h5.y^2
-		PointCoordinateType z = m_eq[0] + m_eq[1]*P.u[m_X] + m_eq[2]*P.u[m_Y] + m_eq[3]*P.u[m_X]*P.u[m_X] + m_eq[4]*P.u[m_X]*P.u[m_Y] + m_eq[5]*P.u[m_Y]*P.u[m_Y];
+		PointCoordinateType z = m_eq[0] + m_eq[1] * P.u[m_X] + m_eq[2] * P.u[m_Y] + m_eq[3] * P.u[m_X] * P.u[m_X] + m_eq[4] * P.u[m_X] * P.u[m_Y] + m_eq[5] * P.u[m_Y] * P.u[m_Y];
 
 		if (nearestPoint)
 		{
@@ -154,7 +157,7 @@ public:
 			nearestPoint->u[m_Z] = z;
 		}
 
-		return static_cast<ScalarType>(fabs(P.u[m_Z] - z));
+		return static_cast<ScalarType>(std::abs(P.u[m_Z] - z));
 	}
 
 protected:
