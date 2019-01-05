@@ -304,10 +304,10 @@ void ccCompass::tryLoading()
 	//loop through DB_Tree and find any ccCompass objects
 	std::vector<int> originals; //ids of original objects
 	std::vector<ccHObject*> replacements; //pointers to objects that will replace the originals
-	int nChildren = m_app->dbRootObject()->getChildrenNumber();
+	unsigned nChildren = m_app->dbRootObject()->getChildrenNumber();
 	for (unsigned i = 0; i < nChildren; i++)
 	{
-		prg.setValue( (50 * i) / nChildren);
+		prg.setValue(static_cast<int>((50 * i) / nChildren));
 		ccHObject* c = m_app->dbRootObject()->getChild(i);
 		tryLoading(c, &originals, &replacements);
 	}
@@ -1305,6 +1305,7 @@ static unsigned int oversample = 30;
 static double likPower = 1.0;
 static bool calcThickness = true;
 static double stride = 0.025;
+static int dof = 10;
 void ccCompass::estimateStructureNormals()
 {
 	//******************************************
@@ -1316,6 +1317,8 @@ void ccCompass::estimateStructureNormals()
 	QLineEdit minSizeText(QString::number(minsize)); minSizeText.setValidator(new QIntValidator(5, std::numeric_limits<int>::max()));
 	QLabel maxSizeLabel("Maximum trace size (points):");
 	QLineEdit maxSizeText(QString::number(maxsize)); maxSizeText.setValidator(new QIntValidator(50, std::numeric_limits<int>::max()));
+	QLabel dofLabel("Wishart Degrees of Freedom:");
+	QLineEdit dofText(QString::number(dof)); dofText.setValidator(new QIntValidator(3, std::numeric_limits<int>::max()));
 	QLabel likPowerLabel("Likelihood power:");
 	QLineEdit likPowerText(QString::number(likPower)); likPowerText.setValidator(new QDoubleValidator(0.01, std::numeric_limits<double>::max(), 6));
 	QLabel calcThickLabel("Calculate thickness:");
@@ -1330,6 +1333,7 @@ void ccCompass::estimateStructureNormals()
 	//tooltips
 	minSizeText.setToolTip("The minimum size of the normal-estimation window.");
 	maxSizeText.setToolTip("The maximum size of the normal-estimation window.");
+	dofText.setToolTip("Sets the degrees of freedom parameter for the Wishart distribution. Due to non-independent data/errors in traces, this should be low (~10). Higher give more confident results - use with care!");
 	distanceText.setToolTip("The furthest distance to search for points on the opposite surface of a GeoObject during thickness calculations.");
 	sampleText.setToolTip("Sample n orientation estimates at each point in each trace to quantify uncertainty.");
 	likPowerText.setToolTip("Fudge factor to change the balance between the prior and likelihood functions. Advanced use only - see docs for details.");
@@ -1343,6 +1347,8 @@ void ccCompass::estimateStructureNormals()
 	vbox->addWidget(&minSizeText);
 	vbox->addWidget(&maxSizeLabel);
 	vbox->addWidget(&maxSizeText);
+	vbox->addWidget(&dofLabel);
+	vbox->addWidget(&dofText);
 	vbox->addWidget(&likPowerLabel);
 	vbox->addWidget(&likPowerText);
 	vbox->addWidget(&sampleLabel);
@@ -1366,6 +1372,7 @@ void ccCompass::estimateStructureNormals()
 	//get values
 	minsize = minSizeText.text().toInt(); //these are the defaults
 	maxsize = maxSizeText.text().toInt();
+	dof = dofText.text().toInt();
 	tcDistance = distanceText.text().toDouble(); //the square of the maximum distance to compute thicknesses for
 	oversample = sampleText.text().toInt();
 	likPower = likPowerText.text().toDouble();
@@ -1621,7 +1628,6 @@ void ccCompass::estimateStructureNormals()
 			//***********************************************************************************************
 			//declare variables used in nested loops below
 			int n;
-			int dof = 10; //maxsize - minsize - 1; //degrees of freedom
 			double mnx, mny, mnz, lpd, lsf, phi, theta, alpha, len;
 			bool hasValidSNE = false; //becomes true once a valid plane is found
 			std::vector<double> bestPd(px.size(), std::numeric_limits<double>::lowest()); //best (log) probability density observed for each point
@@ -1940,8 +1946,8 @@ void ccCompass::estimateStructureNormals()
 					double _phi, _theta, _alpha; //propsals
 
 					//generate chain
-					int count = 0;
-					int iter = 0;
+					unsigned count = 0;
+					unsigned iter = 0;
 					while (count < oversample)
 					{
 						//generate proposed sample
@@ -1985,7 +1991,7 @@ void ccCompass::estimateStructureNormals()
 							count++;
 						}
 
-						if (iter > 1000000*oversample)
+						if (iter > 1000000 * oversample)
 						{
 							m_app->dispToConsole("[ccCompass] Warning - MCMC sampler failed so sampling will be incomplete.", ccMainAppInterface::WRN_CONSOLE_MESSAGE);
 							break;
@@ -2360,14 +2366,14 @@ void ccCompass::estimateStrain()
 
 	int validCells = 0;
 	prg.setInfo("Calculating strain tensors...");
-	for (unsigned x = 0; x < nx; x++)
+	for (int x = 0; x < nx; x++)
 	{
-		for (unsigned y = 0; y < ny; y++)
+		for (int y = 0; y < ny; y++)
 		{
-			for (unsigned z = 0; z < nz; z++)
+			for (int z = 0; z < nz; z++)
 			{
 				int idx = x + nx * (y + ny * z);
-				prg.update(100.0 * idx / float(nx*ny*nz));
+				prg.update((100.0f * idx) / (nx*ny*nz));
 				if (prg.isCancelRequested())
 				{
 					delete blocks;
@@ -2404,7 +2410,7 @@ void ccCompass::estimateStrain()
 								{
 									s->setCurrentOutScalarField(thickSF);
 									int region = ccGeoObject::getGeoObjectRegion(s);
-									if (!(region == ccGeoObject::LOWER_BOUNDARY | region == ccGeoObject::UPPER_BOUNDARY))
+									if (!(region == ccGeoObject::LOWER_BOUNDARY || region == ccGeoObject::UPPER_BOUNDARY))
 									{
 										continue;
 									}
@@ -2675,7 +2681,7 @@ void ccCompass::estimateStrain()
 
 //Estimate P21 intensity of selected structures
 static double searchR = 10;
-static int subsample = 25;
+static unsigned subsample = 25;
 void ccCompass::estimateP21()
 {
 	//setup point cloud to store data in
@@ -2766,7 +2772,7 @@ void ccCompass::estimateP21()
 
 		cloud->reserve(p->size());
 		weight->reserve(p->size());
-		for (int i = 0; i < p->size(); i++)
+		for (unsigned i = 0; i < p->size(); i++)
 		{
 			cloud->addPoint(*p->getPoint(i));
 			weight->addElement(w);
@@ -2807,7 +2813,7 @@ void ccCompass::estimateP21()
 
 	//get values
 	searchR = boxSizeText.text().toDouble();
-	subsample = subsampleText.text().toInt();
+	subsample = subsampleText.text().toUInt();
 	m_app->dispToConsole(QString::asprintf("[ccCompass] Estimating P21 Intensity using a search radius of of %f.",searchR), ccMainAppInterface::STD_CONSOLE_MESSAGE);
 
 	//cleanup
@@ -2820,7 +2826,7 @@ void ccCompass::estimateP21()
 	//subsample outcrop cloud
 	ccPointCloud* outputCloud = new ccPointCloud("P21 Intensity");
 	outputCloud->reserve(outcrop->size() / subsample);
-	for (int p = 0; p < outcrop->size(); p+= subsample)
+	for (unsigned p = 0; p < outcrop->size(); p+= subsample)
 	{
 		outputCloud->addPoint(*outcrop->getPoint(p));
 	}
@@ -3407,7 +3413,7 @@ void ccCompass::importFoliations()
 	//fill combo boxes with field names
 	//std::vector<QString> fields;
 	//std::vector<int> idx;
-	for (int i = 0; i < cld->getNumberOfScalarFields(); i++)
+	for (unsigned i = 0; i < cld->getNumberOfScalarFields(); i++)
 	{
 		dipDirCombo.addItem(cld->getScalarFieldName(i));
 		dipCombo.addItem(cld->getScalarFieldName(i));
@@ -3446,15 +3452,14 @@ void ccCompass::importFoliations()
 	}
 
 	//loop through points
-	float dip, dipdir;
-	for (int p = 0; p < cld->size(); p++)
+	for (unsigned p = 0; p < cld->size(); p++)
 	{
-		dip = cld->getScalarField(dipSF)->at(p);
-		dipdir = cld->getScalarField(dipDirSF)->at(p);
+		float dip = cld->getScalarField(dipSF)->at(p);
+		float dipdir = cld->getScalarField(dipDirSF)->at(p);
 		CCVector3 Cd = *cld->getPoint(p);
 
 		//build plane and get its orientation 
-		ccPlane* plane = new ccPlane(QString("%1/%2").arg((int)dip, 2, 10, QChar('0')).arg((int)dipdir, 3, 10, QChar('0')));
+		ccPlane* plane = new ccPlane(QString("%1/%2").arg(static_cast<int>(dip), 2, 10, QChar('0')).arg(static_cast<int>(dipdir), 3, 10, QChar('0')));
 		plane->showNameIn3D(true);
 		cld->addChild(plane);
 		m_app->addToDB(plane, false, true, false, false);
@@ -3462,7 +3467,7 @@ void ccCompass::importFoliations()
 		CCVector3 C = plane->getCenter();
 
 		//figure out transform (blatantly stolen from ccPlaneEditDlg::updatePlane())
-		CCVector3 Nd = ccNormalVectors::ConvertDipAndDipDirToNormal(dip, dipdir,true);
+		CCVector3 Nd = ccNormalVectors::ConvertDipAndDipDirToNormal(dip, dipdir, true);
 		ccGLMatrix trans;
 		bool needToApplyTrans = false;
 		bool needToApplyRot = false;
@@ -3538,7 +3543,7 @@ void ccCompass::importLineations()
 	QLineEdit planeSize("2.0"); planeSize.setValidator(new QDoubleValidator(0.01, std::numeric_limits<double>::max(), 6));
 
 	//fill combo boxes with field names
-	for (int i = 0; i < cld->getNumberOfScalarFields(); i++)
+	for (unsigned i = 0; i < cld->getNumberOfScalarFields(); i++)
 	{
 		dipDirCombo.addItem(cld->getScalarFieldName(i));
 		dipCombo.addItem(cld->getScalarFieldName(i));
@@ -3574,15 +3579,14 @@ void ccCompass::importLineations()
 	}
 
 	//loop through points
-	float trend, plunge;
-	for (int p = 0; p < cld->size(); p++)
+	for (unsigned p = 0; p < cld->size(); p++)
 	{
-		trend = cld->getScalarField(dipSF)->at(p);
-		plunge = cld->getScalarField(dipDirSF)->at(p);
+		float trend = cld->getScalarField(dipSF)->at(p);
+		float plunge = cld->getScalarField(dipDirSF)->at(p);
 		CCVector3 Cd = *cld->getPoint(p);
 		
 		//build lineation vector
-		CCVector3 l(sin(trend * CC_DEG_TO_RAD) * cos(plunge * CC_DEG_TO_RAD),cos(trend * CC_DEG_TO_RAD)*cos(plunge * CC_DEG_TO_RAD),-sin(plunge * CC_DEG_TO_RAD));
+		CCVector3 l(sin(trend * CC_DEG_TO_RAD) * cos(plunge * CC_DEG_TO_RAD), cos(trend * CC_DEG_TO_RAD)*cos(plunge * CC_DEG_TO_RAD), -sin(plunge * CC_DEG_TO_RAD));
 
 		//create new point cloud to associate with lineation graphic
 		ccPointCloud* points = new ccPointCloud();
@@ -3814,7 +3818,7 @@ void ccCompass::onSave()
 		QTextStream thickness_stream(&thickness_file);
 
 		//write headers
-		plane_stream << "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Sample_Radius,RMS,Gx,Gy,Gz" << endl;
+		plane_stream << "Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Sample_Radius,RMS,Gx,Gy,Gz,Length" << endl;
 		trace_stream << "Name,Trace_id,Point_id,Start_x,Start_y,Start_z,End_x,End_y,End_z,Cost,Cost_Mode" << endl;
 		lineation_stream << "Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge,Length" << endl;
 		thickness_stream << "Name,Sx,Sy,Sz,Ex,Ey,Ez,Trend,Plunge,Thickness" << endl;
@@ -3923,26 +3927,26 @@ int ccCompass::writePlanes(ccHObject* object, QTextStream* out, const QString &p
 	int n = 0;
 	if (ccFitPlane::isFitPlane(object))
 	{
-		//Write object as Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Radius,RMS
+		//write global position
+		ccPlane* P = static_cast<ccPlane*>(object);
+
+		//Write object as Name,Strike,Dip,Dip_Dir,Cx,Cy,Cz,Nx,Ny,Nz,Radius,RMS,Gx,Gy,Gz,Length
 		*out << name << ",";
 		*out << object->getMetaData("Strike").toString() << "," << object->getMetaData("Dip").toString() << "," << object->getMetaData("DipDir").toString() << ",";
 		*out << object->getMetaData("Cx").toString() << "," << object->getMetaData("Cy").toString() << "," << object->getMetaData("Cz").toString() << ",";
 		*out << object->getMetaData("Nx").toString() << "," << object->getMetaData("Ny").toString() << "," << object->getMetaData("Nz").toString() << ",";
 		*out << object->getMetaData("Radius").toString() << "," << object->getMetaData("RMS").toString() << ",";
-		
+
 		if (ss != nullptr)
 		{
-			//write global position
-			ccPlane* P = static_cast<ccPlane*>(object);
 			CCVector3 L = P->getTransformation().getTranslationAsVec3D();
 			CCVector3d G = ss->toGlobal3d(L);
-			*out << G.x << "," << G.y << "," << G.z << endl;
-		}
-		else
-		{
-			*out << endl;
+
+			*out << G.x << "," << G.y << "," << G.z << ",";
 		}
 
+		//write length of trace associated with this plane
+		*out << std::max(P->getXWidth(), P->getYWidth()) << endl;
 		n++;
 	}
 	else if (object->isKindOf(CC_TYPES::PLANE)) //not one of our planes, but a plane anyway (so we'll export it)
@@ -4203,19 +4207,28 @@ int ccCompass::writeObjectXML(ccHObject* object, QXmlStreamWriter* out)
 	}
 
 	//special case - we can calculate all metadata from a plane
-	if (object->isA(CC_TYPES::PLANE) && !ccFitPlane::isFitPlane(object))
+	if (object->isA(CC_TYPES::PLANE))
 	{
-		//build fitplane object
-		ccFitPlane* temp = new ccFitPlane(static_cast<ccPlane*> (object));
+		ccPlane* P = static_cast<ccPlane*> (object);
 
-		//write metadata
-		for (QMap<QString, QVariant>::const_iterator it = temp->metaData().begin(); it != temp->metaData().end(); it++)
+		//write length
+		out->writeTextElement("Length", QString::asprintf("%f", std::max(P->getXWidth(), P->getYWidth())));
+
+		//if this is just an ordinary plane, make a corresponding fitplane object and then steal metadata
+		if (!ccFitPlane::isFitPlane(P))
 		{
-			out->writeTextElement(it.key(), it.value().toString());
-		}
+			//build fitplane object
+			ccFitPlane* temp = new ccFitPlane(P);
 
-		//cleanup
-		delete temp;
+			//write metadata
+			for (QMap<QString, QVariant>::const_iterator it = temp->metaData().begin(); it != temp->metaData().end(); it++)
+			{
+				out->writeTextElement(it.key(), it.value().toString());
+			}
+
+			//cleanup
+			delete temp;
+		}
 	}
 
 	//if object is a polyline object (or a trace) write trace points and normals
@@ -4372,10 +4385,11 @@ int ccCompass::writeObjectXML(ccHObject* object, QXmlStreamWriter* out)
 
 			//gather data strings
 			QString x, y, z, nx, ny, nz, thickness, weight, trend, plunge;
-			CCLib::ScalarField* tSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Thickness"));
 			CCLib::ScalarField* wSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Weight"));
 			CCLib::ScalarField* trendSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Trend"));
 			CCLib::ScalarField* plungeSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Plunge"));
+
+			CCLib::ScalarField* tSF = cloud->getScalarField(cloud->getScalarFieldIndexByName("Thickness"));
 			for (unsigned p = 0; p < cloud->size(); p++)
 			{
 				x += QString::asprintf("%f,", cloud->getPoint(p)->x);
@@ -4384,10 +4398,15 @@ int ccCompass::writeObjectXML(ccHObject* object, QXmlStreamWriter* out)
 				nx += QString::asprintf("%f,", cloud->getPointNormal(p).x);
 				ny += QString::asprintf("%f,", cloud->getPointNormal(p).y);
 				nz += QString::asprintf("%f,", cloud->getPointNormal(p).z);
-				thickness += QString::asprintf("%f,", tSF->getValue(p));
 				weight += QString::asprintf("%f,", wSF->getValue(p));
 				trend += QString::asprintf("%f,", trendSF->getValue(p));
 				plunge += QString::asprintf("%f,", plungeSF->getValue(p));
+
+
+				if (tSF != nullptr) //can be null if no thickness was estimated!
+				{
+					thickness += QString::asprintf("%f,", tSF->getValue(p));
+				}
 			}
 
 			//write
@@ -4397,10 +4416,13 @@ int ccCompass::writeObjectXML(ccHObject* object, QXmlStreamWriter* out)
 			out->writeTextElement("nx", nx);
 			out->writeTextElement("ny", ny);
 			out->writeTextElement("nz", nz);
-			out->writeTextElement("thickness", thickness);
 			out->writeTextElement("weight", weight);
 			out->writeTextElement("trend", trend);
 			out->writeTextElement("plunge", plunge);
+			if (tSF != nullptr)
+			{
+				out->writeTextElement("thickness", thickness);
+			}
 
 			//fin
 			out->writeEndElement();
