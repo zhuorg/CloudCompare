@@ -28,7 +28,7 @@ parts:
     after: [desktop-qt5, eigen, pdal, e57]
     plugin: cmake
     source: https://github.com/CloudCompare/CloudCompare.git
-    source-depth: 1
+    source-tag: 'v2.10.1'
     build-packages:
       - build-essential
       - libavcodec-dev
