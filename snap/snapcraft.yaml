@@ -1,5 +1,5 @@
 name: cloudcompare
-version: '2.10.1'
+version: '2.10.2'
 summary: 3D point cloud and mesh processing software
 description: |
   CloudCompare is a 3D point cloud (and triangular mesh) processing software.
@@ -28,7 +28,7 @@ parts:
     after: [desktop-qt5, eigen, pdal, e57]
     plugin: cmake
     source: https://github.com/CloudCompare/CloudCompare.git
-    source-tag: 'v2.10.1'
+    source-tag: 'v2.10.2'
     build-packages:
       - build-essential
       - libavcodec-dev
