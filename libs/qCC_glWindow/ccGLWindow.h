@@ -659,8 +659,10 @@ protected slots:
 	//! Checks for scheduled redraw
 	void checkScheduledRedraw();
 
+#ifdef QT_DEBUG
 	//! OpenGL KHR debug log
 	void handleLoggedMessage(const QOpenGLDebugMessage&);
+#endif
 
 	//! Performs standard picking at the last clicked mouse position (see m_lastMousePos)
 	void doPicking();

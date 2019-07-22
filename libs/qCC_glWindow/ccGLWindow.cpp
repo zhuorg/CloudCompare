@@ -649,6 +649,7 @@ void ccGLWindow::setDisplayParameters(const ccGui::ParamStruct &params, bool thi
 	}
 }
 
+#ifdef QT_DEBUG
 void ccGLWindow::handleLoggedMessage(const QOpenGLDebugMessage& message)
 {
 	//Decode severity
@@ -735,6 +736,7 @@ void ccGLWindow::handleLoggedMessage(const QOpenGLDebugMessage& message)
 	else
 		ccLog::Print(msg);
 }
+#endif
 
 bool ccGLWindow::initialize()
 {
