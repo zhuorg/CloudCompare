@@ -18,7 +18,7 @@ if( WIN32 )
 			set(QT_RELEASE_DLLS)
 			
 			#standard DLLs (Qt 5)
-			set( QT_RELEASE_DLLS_BASE_NAME Qt5Core Qt5Gui Qt5OpenGL Qt5Widgets Qt5Concurrent Qt5PrintSupport Qt5Svg )
+			set( QT_RELEASE_DLLS_BASE_NAME Qt5Core Qt5Cored Qt5Gui Qt5Guid Qt5OpenGL Qt5Widgets Qt5Concurrent Qt5PrintSupport Qt5Svg )
 			if( ${ARGC} GREATER 1 )
 				if ( ${ARGV1} )
 					list( APPEND QT_RELEASE_DLLS_BASE_NAME Qt5Gamepad )
