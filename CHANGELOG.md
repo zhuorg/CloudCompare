@@ -19,6 +19,8 @@ v2.11 (Anoia) - (in development)
 		planes are now optionally treated as bounded or unbounded.
 		for cones this will not work with Snout mode cones.]
   - New tool:
+	  - 'Edit > Polyline > Smooth': Chaikin smoothing algorithm
+  - New tool:
 	  - 'Edit > Normals > Export normals to SF(s)' (or equivalently 'Edit > Scalar fields > Export normals to SF(s)')
 	  - command line argument: '-NORMALS_TO_SFS' (all dimensions are exported by default, as 3 scalar fields)
   - Command line:
