@@ -15,7 +15,7 @@
 //#                                                                        #
 //##########################################################################
 
-#include "ccGenericGLDisplay.h"
+#include "ccViewportParameters.h"
 
 //CCLib
 #include <CCConst.h>
@@ -243,7 +243,7 @@ ccGLMatrixd ccViewportParameters::computeScaleMatrix(const QRect& glViewport) co
 	return scaleMatd;
 }
 
-CCVector3d ccViewportParameters::computeCameraCenter(const ccBBox& visibleObjectsBBox) const
+CCVector3d ccViewportParameters::getRealCameraCenter(const ccBBox& visibleObjectsBBox) const
 {
 	if (perspectiveView)
 	{
@@ -253,7 +253,7 @@ CCVector3d ccViewportParameters::computeCameraCenter(const ccBBox& visibleObject
 
 	//in orthographic mode, we put the camera at the center of the
 	//visible objects (along the viewing direction)
-	return CCVector3d(cameraCenter.x,
-		cameraCenter.y,
-		visibleObjectsBBox.isValid() ? visibleObjectsBBox.getCenter().z : 0.0);
+	return CCVector3d(	cameraCenter.x,
+						cameraCenter.y,
+						visibleObjectsBBox.isValid() ? visibleObjectsBBox.getCenter().z : 0.0);
 }
