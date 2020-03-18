@@ -2853,7 +2853,7 @@ void ccGLWindow::updateConstellationCenterAndZoom(const ccBBox* aBox/*=0*/)
 
 		CCVector3d cameraDir(0, 0, -1);
 		if (!m_viewportParams.objectCenteredView)
-			cameraDir = getCurrentViewDir();
+			cameraDir = m_viewportParams.getViewDir();
 
 		cameraPos -= cameraDir * d;
 	}
@@ -3323,7 +3323,7 @@ ccGLMatrixd ccGLWindow::computeProjectionMatrix(const CCVector3d& cameraCenter, 
 			double convergence = bbHalfDiag;
 			if (m_viewportParams.objectCenteredView)
 			{
-				CCVector3d viewDir = getCurrentViewDir();
+				CCVector3d viewDir = m_viewportParams.getViewDir();
 
 				CCVector3d realCameraCenter = m_viewportParams.viewMat.inverse() * (cameraCenter - m_viewportParams.pivotPoint) + m_viewportParams.pivotPoint;
 				convergence = std::fabs((realCameraCenter - pivotPoint).dot(viewDir))/* / 2.0*/;
@@ -3556,29 +3556,6 @@ void ccGLWindow::getContext(CC_DRAW_CONTEXT& CONTEXT)
 
 	//other options
 	CONTEXT.drawRoundedPoints = guiParams.drawRoundedPoints;
-}
-
-CCVector3d ccGLWindow::getCurrentViewDir() const
-{
-	//view direction is (the opposite of) the 3rd line of the current view matrix
-	const double* M = m_viewportParams.viewMat.data();
-	CCVector3d axis(-M[2], -M[6], -M[10]);
-	axis.normalize();
-
-	return axis;
-}
-
-CCVector3d ccGLWindow::getCurrentUpDir() const
-{
-	//if (m_viewportParams.objectCenteredView)
-	//	return CCVector3d(0,1,0);
-
-	//otherwise up direction is the 2nd line of the current view matrix
-	const double* M = m_viewportParams.viewMat.data();
-	CCVector3d axis(M[1], M[5], M[9]);
-	axis.normalize();
-
-	return axis;
 }
 
 //QString ToString(ccGLWindow::PICKING_MODE mode)
