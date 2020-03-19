@@ -60,6 +60,7 @@ protected slots:
 	void onBrowseButtonClicked();
 	void onAutoStepsDurationToggled(bool);
 	void onSmoothTrajectoryToggled(bool);
+	void onSmoothRatioChanged(double);
 
 	void preview();
 	void renderAnimation() { render(false); }
