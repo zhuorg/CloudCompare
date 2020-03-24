@@ -56,7 +56,7 @@ void GamepadInput::update(ccGLWindow* win)
 			float scale = static_cast<float>(std::min(win->glWidth(), win->glHeight()) * viewParams.pixelSize);
 			scale /= win->computePerspectiveZoom();
 
-			float tanFOV = tan(static_cast<float>(viewParams.fov * CC_DEG_TO_RAD)/*/2*/);
+			float tanFOV = tan(static_cast<float>(viewParams.fov_deg * CC_DEG_TO_RAD)/*/2*/);
 			m_panning.x *= tanFOV;
 			m_panning.y *= tanFOV;
 
@@ -71,7 +71,7 @@ void GamepadInput::update(ccGLWindow* win)
 			float scale = static_cast<float>(std::min(win->glWidth(), win->glHeight()) * viewParams.pixelSize);
 			scale /= win->computePerspectiveZoom();
 
-			float tanFOV = tan(static_cast<float>(viewParams.fov * CC_DEG_TO_RAD)/*/2*/);
+			float tanFOV = tan(static_cast<float>(viewParams.fov_deg * CC_DEG_TO_RAD)/*/2*/);
 			m_translation.x *= tanFOV;
 			m_translation.y *= tanFOV;
 			

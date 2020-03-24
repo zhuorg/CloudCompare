@@ -343,7 +343,7 @@ void Mouse3DInput::Apply(const std::vector<float>& motionData, ccGLWindow* win)
 			float scale = static_cast<float>(std::min(win->glWidth(), win->glHeight()) * viewParams.pixelSize);
 			if (perspectiveView)
 			{
-				float tanFOV = tan(static_cast<float>(viewParams.fov * CC_DEG_TO_RAD)/*/2*/);
+				float tanFOV = tan(static_cast<float>(viewParams.fov_deg * CC_DEG_TO_RAD)/*/2*/);
 				X *= tanFOV;
 				Y *= tanFOV;
 				scale /= win->computePerspectiveZoom();
