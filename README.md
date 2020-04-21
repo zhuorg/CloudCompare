@@ -1,4 +1,4 @@
-6677CloudCompare
+667788CloudCompare
 ============
 
 Homepage: https://cloudcompare.org
